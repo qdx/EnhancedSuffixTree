@@ -4,21 +4,28 @@ import scala.collection.mutable
 import scala.util.Random
 
 object StreamAutomatonAdjacencyList extends App {
-  val x = new StreamAutomatonAdjacencyList()
-  val y = new StreamAutomatonAdjacencyMatrix()
-  for (i <- Range(0, 20)) {
+//  val x = new StreamAutomatonAdjacencyList()
+//  val y = new StreamAutomatonAdjacencyMatrix()
+  println("Starting!!!")
+  val z = new StreamObservation(100, 13)
+  for (i <- Range(1, 10000)) {
     val next_state = Random.nextInt(10)
-    x.input(State(next_state, System.currentTimeMillis()))
-    y.input(State(next_state, System.currentTimeMillis()))
+    print(next_state + "->")
+//    x.input(State(next_state, System.currentTimeMillis()))
+//    y.input(State(next_state, System.currentTimeMillis()))
+    z.input(StreamObservation.OneObservation(next_state, i))
   }
-  x.show()
-  x.print_path()
-  println(x.find_state(3).mkString)
-  println(x.find_state(5).mkString)
+  println()
+  z.show_observation()
+  z.show_index()
+//  x.show()
+//  x.print_path()
+//  println(x.find_state(3).mkString)
+//  println(x.find_state(5).mkString)
   //  println(y.find_state(3).mkString)
-  println(x.find_paths(3, 5))
-  println(x.find_paths(3, 3))
-  println(x.walk_path(7,10).mkString(" -> "))
+//  println(x.find_paths(3, 5))
+//  println(x.find_paths(3, 3))
+//  println(x.walk_path(7,10).mkString(" -> "))
   //y.show()
 }
 

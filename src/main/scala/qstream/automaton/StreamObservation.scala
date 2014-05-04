@@ -11,7 +11,7 @@ object StreamObservation {
 class StreamObservation(window_size: Int, index_interval: Int) {
 
   var current_state = -1
-  var window_counter = 0
+  var window_counter = -1
   var index_head = -1
   // (state, seq_num)
   var observation_head = new StreamObservation.OneObservation(-1, -1)
@@ -23,16 +23,18 @@ class StreamObservation(window_size: Int, index_interval: Int) {
   val time_index = new mutable.HashMap[Int, Int]()
 
   def input(ob: StreamObservation.OneObservation): Unit = {
-    // store new state
-    if (!observation.contains(ob.state)) {
-      observation(ob.state) = new mutable.HashMap[Int, Int]()
-      // init observation head
-      if (observation_head.state == -1) {
-        observation_head = new StreamObservation.OneObservation(ob.state, ob.seq_num)
-      }
-    }
     if (current_state == -1) current_state = ob.state
-    else observation(current_state)(ob.seq_num) = ob.state
+    else {
+      // store new state
+      if (!observation.contains(current_state)) {
+        observation(current_state) = new mutable.HashMap[Int, Int]()
+        // init observation head
+        if (observation_head.state == -1) {
+          observation_head = new StreamObservation.OneObservation(current_state, ob.seq_num)
+        }
+      }
+      observation(current_state)(ob.seq_num) = ob.state
+    }
 
     // update time index
     if (ob.seq_num % index_interval == 0) {
@@ -51,8 +53,10 @@ class StreamObservation(window_size: Int, index_interval: Int) {
       observation(tmp_oh.state).remove(tmp_oh.seq_num)
       // remove out dated index
       if (tmp_oh.seq_num % index_interval == 0) {
-        time_index.remove(tmp_oh.seq_num)
+        time_index.remove(index_head)
+        index_head += index_interval
       }
+      window_counter -= 1
     }
 
     current_state = ob.state
