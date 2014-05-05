@@ -2,6 +2,7 @@ package qstream.automaton
 
 import scala.collection.mutable
 
+// TODO: use BigInt to replace some Int usage
 object StreamObservation {
 
   case class OneObservation(state: Int, seq_num: Int)

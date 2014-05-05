@@ -8,16 +8,22 @@ object StreamAutomatonAdjacencyList extends App {
 //  val y = new StreamAutomatonAdjacencyMatrix()
   println("Starting!!!")
   val z = new StreamObservation(100, 13)
-  for (i <- Range(1, 10000)) {
+  val g = new TransitionGraph()
+  for (i <- Range(1, 50)) {
     val next_state = Random.nextInt(10)
     print(next_state + "->")
 //    x.input(State(next_state, System.currentTimeMillis()))
 //    y.input(State(next_state, System.currentTimeMillis()))
     z.input(StreamObservation.OneObservation(next_state, i))
+    g.input(next_state)
   }
   println()
   z.show_observation()
   z.show_index()
+  g.show_graph()
+  g.show_edge_weight()
+  g.show_vertex_weight()
+  g.show_path_record()
 //  x.show()
 //  x.print_path()
 //  println(x.find_state(3).mkString)
