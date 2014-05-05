@@ -27,19 +27,18 @@ class TransitionGraph {
         graph(current_state) = new mutable.HashMap[Int, Int]()
       }
 
-      // add new edge
-      if (!graph(current_state).contains(next_state)) {
+      // update weight
+      if (!graph(current_state).contains(next_state) || graph(current_state)(next_state) != 1) {
         if (!vertex_degree.contains(current_state)) vertex_degree(current_state) = 1
         else vertex_degree(current_state) += 1
       }
       if (!edge_weight.contains(current_state)) {
         edge_weight(current_state) = new mutable.HashMap[Int, Int]()
       }
-      if (!edge_weight(current_state).contains(next_state)) {
-        edge_weight(current_state)(next_state) = 1
-      }
+      if (!edge_weight(current_state).contains(next_state)) edge_weight(current_state)(next_state) = 1
       else edge_weight(current_state)(next_state) += 1
 
+      // add new edge and
       graph(current_state)(next_state) = 1
 
       val states = graph.keys

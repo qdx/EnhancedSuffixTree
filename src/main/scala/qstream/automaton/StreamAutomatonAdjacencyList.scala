@@ -17,7 +17,7 @@ object StreamAutomatonAdjacencyList extends App {
     z.input(StreamObservation.OneObservation(next_state, i))
     g.input(next_state)
   }
-  println()
+  println("end of input")
   z.show_observation()
   z.show_index()
   g.show_graph()
