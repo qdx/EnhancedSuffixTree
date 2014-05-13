@@ -2,37 +2,120 @@ package qstream.automaton
 
 import scala.collection.mutable
 import scala.util.Random
+import com.suffixtree.SuffixTree
 
 object StreamAutomatonAdjacencyList extends App {
-//  val x = new StreamAutomatonAdjacencyList()
-//  val y = new StreamAutomatonAdjacencyMatrix()
-  println("Starting!!!")
-  val z = new StreamObservation(100, 13)
-  val g = new TransitionGraph()
-  for (i <- Range(1, 50)) {
-    val next_state = Random.nextInt(10)
-    print(next_state + "->")
-//    x.input(State(next_state, System.currentTimeMillis()))
-//    y.input(State(next_state, System.currentTimeMillis()))
-    z.input(StreamObservation.OneObservation(next_state, i))
-    g.input(next_state)
+
+  //  stream_automaton_test()
+  //  transition_test()
+
+  suffix_tree_test_dedododeeodo()
+//  suffix_tree_test_abcabxabcd()
+//  suffix_tree_test_abc_all()
+
+  def suffix_tree_test_abc_all(): Unit = {
+    val test = new SuffixTree[Char]('#')
+    test.insert('a')
+    test.insert('b')
+    test.insert('c')
+    test.insert('a')
+    test.insert('b')
+    test.insert('c')
+    test.insert('a')
+    test.insert('b')
+    test.insert('c')
+    test.insert('a')
+    test.insert('b')
+    test.insert('c')
+    test.insert('a')
+    test.insert('b')
+    test.insert('c')
+    test.insert('d')
+    test.show()
+
   }
-  println("end of input")
-  z.show_observation()
-  z.show_index()
-  g.show_graph()
-  g.show_edge_weight()
-  g.show_vertex_weight()
-  g.show_path_record()
-//  x.show()
-//  x.print_path()
-//  println(x.find_state(3).mkString)
-//  println(x.find_state(5).mkString)
-  //  println(y.find_state(3).mkString)
-//  println(x.find_paths(3, 5))
-//  println(x.find_paths(3, 3))
-//  println(x.walk_path(7,10).mkString(" -> "))
-  //y.show()
+  def suffix_tree_test_dedododeeodo(): Unit = {
+    val test = new SuffixTree[Char]('#')
+    test.insert('d')
+    test.insert('e')
+    test.insert('d')
+    test.insert('o')
+    test.insert('d')
+    test.insert('o')
+    test.insert('d')
+    test.insert('e')
+    test.insert('e')
+    test.insert('o')
+    test.show()
+
+  }
+  
+  def suffix_tree_test_abcabxabcd(): Unit = {
+    val test = new SuffixTree[Char]('#')
+    test.insert('a')
+    test.insert('b')
+    test.insert('c')
+    test.insert('a')
+    test.insert('b')
+    test.insert('x')
+    test.insert('a')
+    test.insert('b')
+    test.insert('c')
+    test.insert('d')
+    test.show()
+  }
+
+
+  def stream_automaton_test(): Unit = {
+    val x = new StreamAutomatonAdjacencyList()
+    val y = new StreamAutomatonAdjacencyMatrix()
+    for (i <- 0 to 300) {
+      val next_state = Random.nextInt(10)
+      print(next_state + "->")
+      x.input(State(next_state, System.currentTimeMillis()))
+      y.input(State(next_state, System.currentTimeMillis()))
+    }
+    x.show()
+    x.print_path()
+    println(x.find_state(3).mkString)
+    println(x.find_state(5).mkString)
+    println(y.find_state(3).mkString)
+    println(x.find_paths(3, 5))
+    println(x.find_paths(3, 3))
+    println(x.walk_path(7, 10).mkString(" -> "))
+    y.show()
+
+  }
+
+  def transition_test(): Unit = {
+    println("Starting!!!")
+    val z = new StreamObservation(100, 13)
+    val g = new TransitionGraph()
+    for (i <- 0 to 300) {
+      val next_state = Random.nextInt(10)
+      print(next_state + "->")
+      z.input(StreamObservation.OneObservation(next_state, i))
+      g.input(next_state)
+    }
+    println("end of input")
+    z.show_observation()
+    z.show_index()
+
+    g.show_graph()
+    g.show_edge_weight()
+    g.show_vertex_weight()
+    g.show_path_record()
+
+    println(z.observation_head)
+    println(z.index_head)
+    println(z.walk_path(205, 3).mkString(" "))
+    println(z.walk_path(293, 3).mkString(" "))
+    println(z.walk_path(290, 7).mkString(" "))
+    println(z.walk_path(290, 3).mkString(" "))
+    println(z.walk_path(259, 3).mkString(" "))
+    println(z.walk_path(289, 3).mkString(" "))
+
+  }
 }
 
 // To query state with time, build an index of states based on time
