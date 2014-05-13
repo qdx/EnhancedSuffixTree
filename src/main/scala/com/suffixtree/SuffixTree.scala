@@ -13,43 +13,39 @@ class SuffixTree[T](terminal: T) {
   var ap = new ActivePoint[T](root, None, 0)
   var remainder_index = 0
   val future_node = new mutable.HashSet[Node[T]]
+  var previous_inserted_node = None: Option[Node[T]]
 
   def insert(i: T): Unit = {
     sequence.append(i)
-//    val tmp_buffer = new ArrayBuffer[Node[T]]()
-//    for (n <- future_node) {
-//      val edge = n.edges(terminal)
-//      n.edges.remove(terminal)
-//      n.edges(i) = edge
-//      tmp_buffer.append(n)
-//    }
-//    for (n <- tmp_buffer) {
-//      future_node.remove(n)
-//    }
+    //    val tmp_buffer = new ArrayBuffer[Node[T]]()
+    //    for (n <- future_node) {
+    //      val edge = n.edges(terminal)
+    //      n.edges.remove(terminal)
+    //      n.edges(i) = edge
+    //      tmp_buffer.append(n)
+    //    }
+    //    for (n <- tmp_buffer) {
+    //      future_node.remove(n)
+    //    }
 
-    if (match_one_item(i)) {
-      println("match success: " + i.toString)
-      ap.edge_head = ap.edge_head.orElse(Some(i))
-      ap.length += 1
-      skip_edge()
-    } else {
-      println("match failed: " + i.toString)
-      var previous_inserted_node = None: Option[Node[T]]
-      println(s"\tremainder:$remainder_index, seq length: ${sequence.length}")
-      // iterate over all possible suffixes
-      for (k <- Range(remainder_index, sequence.length)) {
-        println("\titeration: " + k)
-        print("\t\t")
-        show_ap()
-        val new_node = insert_suffix(k, i)
+    var loop_flag = true
+    while (loop_flag) {
+      if (match_one_item(i)) {
+        println("match success: " + i.toString)
+        print_status()
+        ap.edge_head = ap.edge_head.orElse(Some(i))
+        ap.length += 1
+        skip_edge()
+        loop_flag = false
+      } else {
+        println("match failed: " + i.toString)
+        print_status()
+        val new_node = insert_suffix(remainder_index, i)
         new_node match {
           case Some(node) =>
             previous_inserted_node match {
               case Some(pnode) =>
-//                if(ap.node.type_ == Node.INTERNAL_NODE && ap.edge_head.isEmpty)
-//                  pnode.suffix_link = Some(ap.node)
-//                else
-                pnode.suffix_link = Some(node)
+                  pnode.suffix_link = Some(node)
                 previous_inserted_node = Some(node)
               case None =>
                 previous_inserted_node = Some(node)
@@ -57,8 +53,19 @@ class SuffixTree[T](terminal: T) {
           case None =>
         }
         remainder_index += 1
+        if (remainder_index == sequence.length){
+          loop_flag = false
+          previous_inserted_node = None
+        }
       }
     }
+  }
+
+  def print_status(): Unit = {
+    println(s"\tremainder:$remainder_index, seq length: ${sequence.length}")
+    // iterate over all possible suffixes
+    print("\t\t")
+    show_ap()
   }
 
   def skip_edge(): Unit = {
@@ -118,6 +125,7 @@ class SuffixTree[T](terminal: T) {
     new_node
   }
 
+  // FIXME: there seems not to be a need for node_insert to return an Option[Node[T]]
   def node_insert(node: Node[T], edge_head: T, label_start: Int, search_index: Int): Option[Node[T]] = {
     // create a new terminating edge
     val new_terminal_node = new Node[T](Node.LEAF_NODE, search_index)
