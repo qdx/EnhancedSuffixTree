@@ -7,6 +7,6 @@ class Edge[T](start: Int, end: Int, to_node: Node[T]) {
   var label = new Label(start, end)
   var to = to_node
 
-  def length(): Int = end - start + 1
+  def length(seq_length: Int): Int = if(end == -1) seq_length - start else end - start + 1
 
 }
