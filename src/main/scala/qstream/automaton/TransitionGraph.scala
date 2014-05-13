@@ -39,27 +39,29 @@ class TransitionGraph {
       else edge_weight(current_state)(next_state) += 1
 
       // add new edge and
-      graph(current_state)(next_state) = 1
+      if(safe_graph_lookup(current_state, next_state) != 1) {
+        graph(current_state)(next_state) = 1
 
-      val states = graph.keys
+        val states = graph.keys
 
-      // column update
-      for (k <- states) {
-        if (safe_graph_lookup(k, current_state) + 1 < safe_graph_lookup(k, next_state)) {
-          if (safe_graph_lookup(k, next_state) != Double.PositiveInfinity)
-            path_record_append(k, next_state, safe_graph_lookup(k, next_state).toInt)
-          graph(k)(next_state) = graph(k)(current_state) + 1
-          row_update_queue.enqueue(new TransitionGraph.OneTransition(k, next_state))
-        }
-      }
-
-      // row update
-      for (r <- row_update_queue) {
+        // column update
         for (k <- states) {
-          if (safe_graph_lookup(r.to, k) + safe_graph_lookup(r.from, r.to) < safe_graph_lookup(r.from, k)) {
-            if (safe_graph_lookup(r.from, k) != Double.PositiveInfinity)
-              path_record_append(r.from, k, safe_graph_lookup(r.from, k).toInt)
-            graph(r.from)(k) = graph(r.to)(k) + graph(r.from)(r.to)
+          if (safe_graph_lookup(k, current_state) + 1 < safe_graph_lookup(k, next_state)) {
+            if (safe_graph_lookup(k, next_state) != Double.PositiveInfinity)
+              path_record_append(k, next_state, safe_graph_lookup(k, next_state).toInt)
+            graph(k)(next_state) = graph(k)(current_state) + 1
+            row_update_queue.enqueue(new TransitionGraph.OneTransition(k, next_state))
+          }
+        }
+
+        // row update
+        for (r <- row_update_queue) {
+          for (k <- states) {
+            if (safe_graph_lookup(r.to, k) + safe_graph_lookup(r.from, r.to) < safe_graph_lookup(r.from, k)) {
+              if (safe_graph_lookup(r.from, k) != Double.PositiveInfinity)
+                path_record_append(r.from, k, safe_graph_lookup(r.from, k).toInt)
+              graph(r.from)(k) = graph(r.to)(k) + graph(r.from)(r.to)
+            }
           }
         }
       }
