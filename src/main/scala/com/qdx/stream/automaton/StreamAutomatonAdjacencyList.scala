@@ -1,17 +1,20 @@
-package qstream.automaton
+package com.qdx.stream.automaton
 
 import scala.collection.mutable
 import scala.util.Random
-import com.suffixtree.SuffixTree
+import com.qdx.suffixtree.SuffixTree
 
 object StreamAutomatonAdjacencyList extends App {
 
   //  stream_automaton_test()
   //  transition_test()
 
-  suffix_tree_test_dedododeeodo()
+//  suffix_tree_test_dedododeeodo()
 //  suffix_tree_test_abcabxabcd()
 //  suffix_tree_test_abc_all()
+  val test = new SuffixTree[Char]
+  test.batch_input("asdf")
+  test.show()
 
   def suffix_tree_test_abc_all(): Unit = {
     val test = new SuffixTree[Char]

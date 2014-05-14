@@ -1,4 +1,4 @@
-package com.suffixtree
+package com.qdx.suffixtree
 
 case class Label(start: Int, end: Int)
 

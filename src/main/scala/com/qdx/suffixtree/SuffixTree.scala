@@ -1,4 +1,4 @@
-package com.suffixtree
+package com.qdx.suffixtree
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable
@@ -13,6 +13,8 @@ class SuffixTree[T] {
   var ap = new ActivePoint[T](root, None, 0)
   var remainder_index = 0
   var previous_inserted_node = None: Option[Node[T]]
+
+  def batch_input(l: Iterable[T]): Unit = l.foreach((i: T) => insert(i))
 
   def insert(i: T): Unit = {
     sequence.append(i)
@@ -197,6 +199,10 @@ class SuffixTree[T] {
         } else Unit
       case None => Unit
     }
+
+  }
+
+  def breadth_first_traverse(): Unit = {
 
   }
 

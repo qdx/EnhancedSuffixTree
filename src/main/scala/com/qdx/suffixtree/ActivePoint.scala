@@ -1,4 +1,4 @@
-package com.suffixtree
+package com.qdx.suffixtree
 
 // FIXME: constraint that I did not enforce:
 // whenever length is greater than 0, edge_head should not be None

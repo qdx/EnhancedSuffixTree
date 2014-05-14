@@ -1,4 +1,5 @@
-package qstream.automaton
+package com.qdx.stream.automaton
+
 import scala.collection.mutable
 
 case class State(state:Int, time: Long)

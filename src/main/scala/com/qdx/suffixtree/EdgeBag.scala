@@ -1,4 +1,4 @@
-package com.suffixtree
+package com.qdx.suffixtree
 
 import scala.collection.mutable
 
