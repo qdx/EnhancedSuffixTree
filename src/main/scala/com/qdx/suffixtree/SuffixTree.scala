@@ -2,12 +2,13 @@ package com.qdx.suffixtree
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable
+import com.qdx.logging.Logger
 
 object SuffixTree {
   val SEQ_END = -1
 }
 
-class SuffixTree[T] {
+class SuffixTree[T] extends Logger {
   val root = new Node[T](0)
   val sequence = new ArrayBuffer[T]()
   var ap = new ActivePoint[T](root, None, 0)
@@ -23,53 +24,50 @@ class SuffixTree[T] {
     var inserting = false
     while (loop_flag) {
       if (match_one_item(i)) {
-        println("match success: " + i.toString)
-        print_status()
+        debug("match success: " + i.toString)
+        debug(get_status_string())
         ap.edge_head = ap.edge_head.orElse(Some(i))
         ap.length += 1
         skip_edge()
         loop_flag = false
-        if(previous_inserted_node.isDefined && ap.node.type_ == Node.INTERNAL_NODE && inserting && !ap.node.equals(previous_inserted_node.get)){
+        if (previous_inserted_node.isDefined && ap.node.type_ == Node.INTERNAL_NODE && inserting && !ap.node.equals(previous_inserted_node.get)) {
           previous_inserted_node.get.suffix_link = Some(ap.node)
-          println("\t\t suffix link inserted")
+          debug("\t\t suffix link inserted")
           previous_inserted_node = None
         }
-        if (remainder_index >= sequence.length - 1){
+        if (remainder_index >= sequence.length - 1) {
           previous_inserted_node = None
         }
       } else {
-        println("match failed: " + i.toString)
-        print_status()
+        debug("match failed: " + i.toString)
+        debug(get_status_string())
         inserting = true
         val new_node = insert_suffix(remainder_index, i)
         new_node match {
           case Some(node) =>
             previous_inserted_node match {
               case Some(pnode) =>
-//                if (node.type_ == Node.INTERNAL_NODE && pnode.type_ == Node.INTERNAL_NODE)
-                  pnode.suffix_link = Some(node)
-                println("\t\t suffix link inserted")
+                //                if (node.type_ == Node.INTERNAL_NODE && pnode.type_ == Node.INTERNAL_NODE)
+                pnode.suffix_link = Some(node)
+                debug("\t\t suffix link inserted")
                 previous_inserted_node = Some(node)
               case None =>
                 previous_inserted_node = Some(node)
             }
           case None =>
         }
-        if (remainder_index >= sequence.length - 1){
+        if (remainder_index >= sequence.length - 1) {
           loop_flag = false
           previous_inserted_node = None
         }
         remainder_index += 1
       }
-      println("\t previous node defined: " + previous_inserted_node.isDefined)
+      debug("\t previous node defined: " + previous_inserted_node.isDefined)
     }
   }
 
-  def print_status(): Unit = {
-    println(s"\tremainder:$remainder_index, seq length: ${sequence.length}")
-    // iterate over all possible suffixes
-    print("\t\t")
-    show_ap()
+  def get_status_string(): String = {
+    s"\tremainder:$remainder_index, seq length: ${sequence.length}\n" + "\t\t" + get_active_point_string()
   }
 
   def skip_edge(): Unit = {
@@ -103,16 +101,16 @@ class SuffixTree[T] {
         assert(ap.length != 0)
         val ap_edge = ap.node.edges(head)
         if (sequence(ap_edge.label.start + ap.length).equals(input)) {
-            println("\t\t\t edge insert 1")
-            new_node = Some(edge_insert(ap.node, head, ap.length, input, sequence.length, begin_at))
+          debug("\t\t\t edge insert 1")
+          new_node = Some(edge_insert(ap.node, head, ap.length, input, sequence.length, begin_at))
         } else {
-          println("\t\t\t edge insert 2")
+          debug("\t\t\t edge insert 2")
           new_node = Some(edge_insert(ap.node, head, ap.length - 1, input, sequence.length - 1, begin_at))
         }
       case None =>
         assert(ap.length == 0)
-          println("\t\t\t node insert 2")
-          new_node = node_insert(ap.node, input, sequence.length - 1, begin_at)
+        debug("\t\t\t node insert 2")
+        new_node = node_insert(ap.node, input, sequence.length - 1, begin_at)
     }
     move_active_point_after_split()
     new_node
@@ -139,7 +137,7 @@ class SuffixTree[T] {
 
     old_edge.label = new Label(old_edge.label.start, old_edge.label.start + split_point)
     old_edge.to = new_node
-    println("\t\t" + new_edge.label.toString)
+    debug("\t\t" + new_edge.label.toString)
     new_node.add_edge(sequence, new_edge)
 
     node_insert(new_node, input, label_start, search_index)
@@ -158,12 +156,12 @@ class SuffixTree[T] {
     } else {
       ap.node.suffix_link match {
         case Some(item) =>
-          val old_ap_label = ap.edge_head match{
+          val old_ap_label = ap.edge_head match {
             case Some(head) => Some(ap.node.edges(head).label)
             case None => None
           }
           ap.node = item
-          old_ap_label match{
+          old_ap_label match {
             case Some(label) => walk_down_ap(label)
             case None =>
           }
@@ -174,14 +172,14 @@ class SuffixTree[T] {
   }
 
   def walk_down_ap(old_label: Label): Unit = {
-    println("*** walk_down_ap called!***")
+    debug("*** walk_down_ap called!***")
     ap.edge_head match {
       case Some(head) =>
         val ap_edge = ap.node.edges(head)
         if (ap.length > ap_edge.length(sequence.length)) {
           var slice = sequence.slice(old_label.start, old_label.start + ap.length)
           var new_active_edge = ap.node.edges(head)
-          println("\tnew active edge length:" + new_active_edge.length(sequence.length))
+          debug("\tnew active edge length:" + new_active_edge.length(sequence.length))
           while (new_active_edge.length(sequence.length) < ap.length) {
             slice = slice.slice(new_active_edge.length(sequence.length), slice.length)
             ap.length -= new_active_edge.length(sequence.length)
@@ -192,7 +190,7 @@ class SuffixTree[T] {
               ap.edge_head = Some(slice.head)
               new_active_edge = ap.node.edges(ap.edge_head.get)
             } else {
-              println("active length should never be less than 0!")
+              debug("active length should never be less than 0!")
               System.exit(-1)
             }
           }
@@ -202,12 +200,30 @@ class SuffixTree[T] {
 
   }
 
-  def breadth_first_traverse(): Unit = {
-
+  def breadth_first_traverse(): ArrayBuffer[Node[T]] = {
+    val queue = new mutable.Queue[Node[T]]()
+    val result = new mutable.ArrayBuffer[Node[T]]()
+    queue.enqueue(root)
+    while (queue.length > 0) {
+      val s = queue.length
+      val add_queue = new mutable.Queue[Node[T]]()
+      for (n <- queue) {
+        result.append(n)
+        if (n.type_ != Node.LEAF_NODE)
+          for (e <- n.edges) {
+            add_queue.enqueue(e._2.to)
+          }
+      }
+      queue ++= add_queue
+      for (i <- Range(0, s)) {
+        queue.dequeue()
+      }
+    }
+    result
   }
 
-  def show_ap(): Unit = {
-    println("Active Point:" + ap.node.type_ + ", " + ap.edge_head + ", " + ap.length)
+  def get_active_point_string(): String = {
+    "Active Point:" + ap.node.type_ + ", " + ap.edge_head + ", " + ap.length
   }
 
   def show(): Unit = {
@@ -224,7 +240,7 @@ class SuffixTree[T] {
       val add_queue = new mutable.Queue[Node[T]]()
       for (n <- queue) {
         id_counter += safe_hash(n, id_map, id_counter)
-        println("node " + id_map(n) + " has " + n.edges.size + " children")
+        debug("node " + id_map(n) + " has " + n.edges.size + " children")
         for (e <- n.edges) {
           id_counter += safe_hash(e._2.to, id_map, id_counter)
           sb.append(id_map(n)).append(" -> ").append(id_map(e._2.to)).append(" [label=\"")
@@ -238,16 +254,13 @@ class SuffixTree[T] {
           }
         }
       }
-      print("Queue: ")
-      queue.foreach((t: Node[T]) => print(id_map(t) + ", "))
-      println()
+      debug("Queue: " + queue.map((t: Node[T]) => id_map(t)).mkString(", "))
       queue ++= add_queue
       for (i <- Range(0, s)) {
         queue.dequeue()
       }
     }
 
-    println(sb)
     sb.append("edge [color=red]\n")
     for ((k, v) <- id_map) {
       k.suffix_link match {
@@ -256,9 +269,9 @@ class SuffixTree[T] {
       }
     }
     sb.append("}")
-    println(sb)
-    println("Active Point:" + id_map(ap.node) + ", " + ap.edge_head + ", " + ap.length)
-    println(sequence.mkString)
+    debug(sb.toString())
+    debug("Active Point:" + id_map(ap.node) + ", " + ap.edge_head + ", " + ap.length)
+    debug(sequence.mkString)
   }
 
   private def safe_hash(key: Node[T], map: mutable.HashMap[Node[T], Int], id: Int): Int = {
