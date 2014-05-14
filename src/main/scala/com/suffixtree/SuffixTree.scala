@@ -7,26 +7,15 @@ object SuffixTree {
   val SEQ_END = -1
 }
 
-class SuffixTree[T](terminal: T) {
+class SuffixTree[T] {
   val root = new Node[T](0)
   val sequence = new ArrayBuffer[T]()
   var ap = new ActivePoint[T](root, None, 0)
   var remainder_index = 0
-  val future_node = new mutable.HashSet[Node[T]]
   var previous_inserted_node = None: Option[Node[T]]
 
   def insert(i: T): Unit = {
     sequence.append(i)
-    //    val tmp_buffer = new ArrayBuffer[Node[T]]()
-    //    for (n <- future_node) {
-    //      val edge = n.edges(terminal)
-    //      n.edges.remove(terminal)
-    //      n.edges(i) = edge
-    //      tmp_buffer.append(n)
-    //    }
-    //    for (n <- tmp_buffer) {
-    //      future_node.remove(n)
-    //    }
 
     var loop_flag = true
     var inserting = false
@@ -112,27 +101,16 @@ class SuffixTree[T](terminal: T) {
         assert(ap.length != 0)
         val ap_edge = ap.node.edges(head)
         if (sequence(ap_edge.label.start + ap.length).equals(input)) {
-          if (ap_edge.label.start + ap.length == ap_edge.label.end) {
-            val node = ap.node.edges(head).to
-            println("\t\t\t node insert 1")
-            new_node = node_insert(node, terminal, sequence.length, begin_at)
-          } else {
             println("\t\t\t edge insert 1")
             new_node = Some(edge_insert(ap.node, head, ap.length, input, sequence.length, begin_at))
-          }
         } else {
           println("\t\t\t edge insert 2")
           new_node = Some(edge_insert(ap.node, head, ap.length - 1, input, sequence.length - 1, begin_at))
         }
       case None =>
         assert(ap.length == 0)
-        if (ap.node.edges.contains(input)) {
-          println("\t\t\t edge insert 3")
-          new_node = Some(edge_insert(ap.node, input, 0, terminal, sequence.length, begin_at))
-        } else {
           println("\t\t\t node insert 2")
           new_node = node_insert(ap.node, input, sequence.length - 1, begin_at)
-        }
     }
     move_active_point_after_split()
     new_node
@@ -145,9 +123,6 @@ class SuffixTree[T](terminal: T) {
     val new_edge = new Edge[T](label_start, SuffixTree.SEQ_END, new_terminal_node)
     // add the new edge to active node
     node.edges(edge_head) = new_edge
-    if (edge_head.equals(terminal)) {
-      future_node.add(node)
-    }
     None
   }
 

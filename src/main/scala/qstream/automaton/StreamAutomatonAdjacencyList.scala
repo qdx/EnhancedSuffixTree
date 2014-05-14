@@ -14,7 +14,7 @@ object StreamAutomatonAdjacencyList extends App {
 //  suffix_tree_test_abc_all()
 
   def suffix_tree_test_abc_all(): Unit = {
-    val test = new SuffixTree[Char]('#')
+    val test = new SuffixTree[Char]
     test.insert('a')
     test.insert('b')
     test.insert('c')
@@ -35,7 +35,7 @@ object StreamAutomatonAdjacencyList extends App {
 
   }
   def suffix_tree_test_dedododeeodo(): Unit = {
-    val test = new SuffixTree[Char]('#')
+    val test = new SuffixTree[Char]
     test.insert('d')
     test.insert('e')
     test.insert('d')
@@ -46,12 +46,15 @@ object StreamAutomatonAdjacencyList extends App {
     test.insert('e')
     test.insert('e')
     test.insert('o')
+    test.insert('d')
+    test.insert('o')
+    test.insert('k')
     test.show()
 
   }
   
   def suffix_tree_test_abcabxabcd(): Unit = {
-    val test = new SuffixTree[Char]('#')
+    val test = new SuffixTree[Char]
     test.insert('a')
     test.insert('b')
     test.insert('c')
