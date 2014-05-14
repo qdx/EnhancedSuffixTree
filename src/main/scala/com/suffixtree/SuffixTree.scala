@@ -29,6 +29,7 @@ class SuffixTree[T](terminal: T) {
     //    }
 
     var loop_flag = true
+    var inserting = false
     while (loop_flag) {
       if (match_one_item(i)) {
         println("match success: " + i.toString)
@@ -37,27 +38,39 @@ class SuffixTree[T](terminal: T) {
         ap.length += 1
         skip_edge()
         loop_flag = false
+        if(previous_inserted_node.isDefined && ap.node.type_ == Node.INTERNAL_NODE && inserting && !ap.node.equals(previous_inserted_node.get)){
+          previous_inserted_node.get.suffix_link = Some(ap.node)
+          println("\t\t suffix link inserted")
+          previous_inserted_node = None
+        }
+        if (remainder_index >= sequence.length - 1){
+          previous_inserted_node = None
+        }
       } else {
         println("match failed: " + i.toString)
         print_status()
+        inserting = true
         val new_node = insert_suffix(remainder_index, i)
         new_node match {
           case Some(node) =>
             previous_inserted_node match {
               case Some(pnode) =>
+//                if (node.type_ == Node.INTERNAL_NODE && pnode.type_ == Node.INTERNAL_NODE)
                   pnode.suffix_link = Some(node)
+                println("\t\t suffix link inserted")
                 previous_inserted_node = Some(node)
               case None =>
                 previous_inserted_node = Some(node)
             }
           case None =>
         }
-        remainder_index += 1
-        if (remainder_index == sequence.length){
+        if (remainder_index >= sequence.length - 1){
           loop_flag = false
           previous_inserted_node = None
         }
+        remainder_index += 1
       }
+      println("\t previous node defined: " + previous_inserted_node.isDefined)
     }
   }
 
@@ -168,9 +181,15 @@ class SuffixTree[T](terminal: T) {
     } else {
       ap.node.suffix_link match {
         case Some(item) =>
-          val old_ap_label = ap.node.edges(ap.edge_head.get).label
+          val old_ap_label = ap.edge_head match{
+            case Some(head) => Some(ap.node.edges(head).label)
+            case None => None
+          }
           ap.node = item
-          walk_down_ap(old_ap_label)
+          old_ap_label match{
+            case Some(label) => walk_down_ap(label)
+            case None =>
+          }
         case None => ap.node = root
       }
     }
