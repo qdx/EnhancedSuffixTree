@@ -67,10 +67,10 @@ class SuffixTree[T] extends Logger {
   }
 
   // standard BFS traverse of the tree that returns a list of the nodes
-  def breadth_first_traverse(): ArrayBuffer[Node[T]] = {
+  def breadth_first_traverse(root_node: Node[T] = root): ArrayBuffer[Node[T]] = {
     val queue = new mutable.Queue[Node[T]]()
     val result = new mutable.ArrayBuffer[Node[T]]()
-    queue.enqueue(root)
+    queue.enqueue(root_node)
     while (queue.length > 0) {
       val s = queue.length
       val add_queue = new mutable.Queue[Node[T]]()
@@ -89,6 +89,39 @@ class SuffixTree[T] extends Logger {
     result
   }
 
+  def search(s: Iterable[T]): ArrayBuffer[Int] = {
+    val result = new ArrayBuffer[Int]()
+    val matching_point = new ActivePoint[T](root, None, 0)
+    for (i <- s) {
+      matching_point.edge_head match {
+        case Some(head) =>
+          val mp_edge = matching_point.node.edges(head)
+          if (!i.equals(sequence(mp_edge.label.start + matching_point.length))) {
+            return result
+          }
+        case None =>
+          if (!matching_point.node.edges.contains(i)) {
+            return result
+          }
+      }
+      matching_point.edge_head = matching_point.edge_head.orElse(Some(i))
+      val mp_edge = matching_point.node.edges(matching_point.edge_head.get)
+      matching_point.length += 1
+      if (matching_point.length == mp_edge.length(sequence.length)) {
+        matching_point.node = mp_edge.to
+        matching_point.edge_head = None
+        matching_point.length = 0
+      }
+    }
+    val terminating_at = matching_point.edge_head match{
+      case Some(head) => matching_point.node.edges(head).to
+      case None => matching_point.node
+    }
+    for(n <- breadth_first_traverse(terminating_at))
+      if(n.type_ == Node.LEAF_NODE) result.append(n.search_index_)
+    result
+  }
+
   def get_status_string(): String = {
     s"\tremainder:$remainder_index, seq length: ${sequence.length}\n" + "\t\t" + get_active_point_string()
   }
@@ -97,7 +130,7 @@ class SuffixTree[T] extends Logger {
     "Active Point(" + ap.node.type_ + ", " + ap.edge_head + ", " + ap.length + ")"
   }
 
-  def show(): Unit = {
+  def show(): String = {
     // used to do bfs
     val queue = new mutable.Queue[Node[T]]()
     queue.enqueue(root)
@@ -155,6 +188,7 @@ class SuffixTree[T] extends Logger {
     debug(sb.toString())
     debug("Active Point(" + id_map(ap.node) + ", " + ap.edge_head + ", " + ap.length + ")")
     debug(sequence.mkString)
+    sb.toString()
   }
 
   private def establish_suffix_link(inserting: Boolean, match_result: Boolean, new_node: Option[Node[T]]): Unit = {
