@@ -7,7 +7,7 @@ import org.scalacheck._
 object SuffixTreeTest extends Properties("Suffix Tree Properties") {
   val alphabet = Gen.choose('a', 'z')
   val aTozString = for{
-    size <- Gen.choose(1000, 10000)
+    size <- Gen.choose(10, 10000)
     s <- Gen.listOfN(size, alphabet)
   } yield s.mkString
 
