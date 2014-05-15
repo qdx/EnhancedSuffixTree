@@ -41,20 +41,20 @@ object Generator {
   }
 }
 
-object Main {
-  import Generator._
-
-  def example = generator[String] { yld =>
-    yld( "first" )
-
-    for( i <- suspendable(List(1,2,3)); j <- suspendable(List(4,5,6))) {
-      yld((i*j).toString)
-    }
-
-    yld("last")
-  }
-
-  def main(args: Array[String]) {
-    for( a <- example ) println(a)
-  }
-}
+//object Main {
+//  import Generator._
+//
+//  def example = generator[String] { yld =>
+//    yld( "first" )
+//
+//    for( i <- suspendable(List(1,2,3)); j <- suspendable(List(4,5,6))) {
+//      yld((i*j).toString)
+//    }
+//
+//    yld("last")
+//  }
+//
+//  def main(args: Array[String]) {
+//    for( a <- example ) println(a)
+//  }
+//}
