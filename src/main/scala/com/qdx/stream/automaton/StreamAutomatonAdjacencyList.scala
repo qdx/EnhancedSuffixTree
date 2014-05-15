@@ -3,18 +3,54 @@ package com.qdx.stream.automaton
 import scala.collection.mutable
 import scala.util.Random
 import com.qdx.suffixtree.SuffixTree
+import com.qdx.suffixtree.Node
+import com.qdx.logging.Logger
 
 object StreamAutomatonAdjacencyList extends App {
 
   //  stream_automaton_test()
   //  transition_test()
 
-//  suffix_tree_test_dedododeeodo()
-//  suffix_tree_test_abcabxabcd()
-//  suffix_tree_test_abc_all()
-  val test = new SuffixTree[Char]
-  test.batch_input("asdf")
-  test.show()
+  //  suffix_tree_test_dedododeeodo()
+  //  suffix_tree_test_abcabxabcd()
+  //  suffix_tree_test_abc_all()
+  val test_cases = Array(
+    "abcabxabcd",
+    "dedododeeodo",
+    "vvivvv",
+    "bldfbdbdf",
+    "mhmehmnhm",
+    "qfqufquqfq",
+    "wwtotwto",
+    "knunuknuxknu"
+  )
+  for (c <- test_cases) {
+    if (manual_test_suffix_tree(c, '#')) {
+      println("test for:" + c + " passed")
+    } else {
+      println("test for:" + c + " failed")
+    }
+  }
+
+  def manual_test_suffix_tree[T](s: Iterable[T], terminal: T, log_level: Int = Logger.ERROR): Boolean = {
+    val test = new SuffixTree[T]
+    test.log_level = log_level
+    var counter = 0
+    for (i <- s) {
+      counter += 1
+      test.insert(i)
+      test.show()
+    }
+    test.insert(terminal)
+    test.show()
+    var leaf_c = 0
+    for (n <- test.breadth_first_traverse()) {
+      if (n.type_ == Node.LEAF_NODE) {
+        leaf_c += 1
+      }
+    }
+    if (leaf_c == counter + 1) true else false
+  }
 
   def suffix_tree_test_abc_all(): Unit = {
     val test = new SuffixTree[Char]
@@ -37,6 +73,7 @@ object StreamAutomatonAdjacencyList extends App {
     test.show()
 
   }
+
   def suffix_tree_test_dedododeeodo(): Unit = {
     val test = new SuffixTree[Char]
     test.insert('d')
@@ -55,7 +92,7 @@ object StreamAutomatonAdjacencyList extends App {
     test.show()
 
   }
-  
+
   def suffix_tree_test_abcabxabcd(): Unit = {
     val test = new SuffixTree[Char]
     test.insert('a')
