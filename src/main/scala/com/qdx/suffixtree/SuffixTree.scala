@@ -30,37 +30,20 @@ class SuffixTree[T] extends Logger {
       val match_result = match_one_item(i)
       if (match_result) {
         // match success, no need to insert anything, just move ap and setup suffix link
-        debug("match success: " + i.toString)
-        debug(get_status_string())
         ap.edge_head = ap.edge_head.orElse(Some(i))
         ap.length += 1
-        debug(get_active_point_string())
-        debug("\t\t\t remainder:" + remainder_index + " seq:" + sequence.length)
-        debug("\t\t\t defined:" + previous_inserted_node.isDefined)
-        debug("\t\t\t ap node:" + get_active_point_string())
-        debug("\t\t\t inserting:" + inserting)
-        if (previous_inserted_node.isDefined)
-          debug("\t\t\t is the same:" + ap.node.equals(previous_inserted_node.get))
         establish_suffix_link(inserting, match_result, None)
         loop_flag = false
         walk_down_ap(ap.node.edges(ap.edge_head.get).label.start)
       } else {
         // when match failed, insert the suffixes from remainder_index till the end
-        debug("match failed: " + i.toString)
-        debug(get_status_string())
         inserting = true
         val new_node = insert_suffix(remainder_index, i)
         loop_flag = remainder_index < sequence.length - 1
-        debug("\t\t\t remainder:" + remainder_index + " seq:" + sequence.length)
-        debug("\t\t\t defined:" + previous_inserted_node.isDefined)
-        debug("\t\t\t ap node:" + get_active_point_string())
-        debug("\t\t\t inserting:" + inserting)
-        debug("\t\t\t previous node defined: " + previous_inserted_node.isDefined)
         establish_suffix_link(inserting, match_result, new_node)
         move_active_point_after_split()
         remainder_index += 1
       }
-      debug(get_active_point_string())
     }
   }
 
@@ -117,7 +100,6 @@ class SuffixTree[T] extends Logger {
       val add_queue = new mutable.Queue[Node[T]]()
 
       for (n <- queue) {
-        debug("node " + id_map(n) + " has " + n.edges.size + " children")
         for (e <- n.edges) {
           id_counter += {
             if (!id_map.contains(e._2.to)) {
@@ -137,7 +119,6 @@ class SuffixTree[T] extends Logger {
           }
         }
       }
-      debug("Queue: " + queue.map((t: Node[T]) => id_map(t)).mkString(", "))
       queue ++= add_queue
       Range(0, s).foreach(i => queue.dequeue())
     }
@@ -150,9 +131,6 @@ class SuffixTree[T] extends Logger {
       }
     }
     sb.append("}")
-    debug(sb.toString())
-    debug("Active Point(" + id_map(ap.node) + ", " + ap.edge_head + ", " + ap.length + ")")
-    debug(sequence.mkString)
   }
 
   private def establish_suffix_link(inserting: Boolean, match_result: Boolean, new_node: Option[Node[T]]): Unit = {
@@ -171,7 +149,6 @@ class SuffixTree[T] extends Logger {
               // is similar to case 3, with the only difference is that in this case, no new node or
               // edge is inerted
               if (pnode.suffix_link.isEmpty && ap.node.type_ == Node.INTERNAL_NODE && !ap.node.equals(pnode)) {
-                debug("\t\t suffix link inserted")
                 pnode.suffix_link = Some(ap.node)
               }
             case None =>
@@ -186,7 +163,6 @@ class SuffixTree[T] extends Logger {
               case Some(pnode) =>
                 // case 1: link between previously inserted new node and currently inserted new node
                 if (pnode.suffix_link.isEmpty) {
-                  debug("\t\t suffix link inserted")
                   pnode.suffix_link = Some(node)
                 }
                 previous_inserted_node = Some(node)
@@ -199,7 +175,6 @@ class SuffixTree[T] extends Logger {
                 // case 3: when no new internal node is inserted, link between previously inserted new node and
                 // the active node where terminal edge is inserted
                 if (pnode.suffix_link.isEmpty && ap.node.type_ == Node.INTERNAL_NODE && !ap.node.equals(pnode)) {
-                  debug("\t\t suffix link inserted")
                   pnode.suffix_link = Some(ap.node)
                 }
               case None =>
@@ -216,11 +191,9 @@ class SuffixTree[T] extends Logger {
     ap.edge_head match {
       case Some(head) =>
         assert(ap.length != 0)
-        debug("\t\t\t edge insert")
         new_node = Some(edge_insert(ap.node, head, ap.length - 1, input, sequence.length - 1, search_index))
       case None =>
         assert(ap.length == 0)
-        debug("\t\t\t node insert")
         node_insert(ap.node, input, sequence.length - 1, search_index)
     }
     new_node
@@ -249,7 +222,6 @@ class SuffixTree[T] extends Logger {
 
     old_edge.label = new Label(old_edge.label.start, old_edge.label.start + split_point)
     old_edge.to = new_node
-    debug("\t\t" + new_edge.label.toString)
     new_node.add_edge(sequence, new_edge)
 
     node_insert(new_node, input, label_start, search_index)
@@ -282,27 +254,20 @@ class SuffixTree[T] extends Logger {
       }
     }
 
-    debug(get_active_point_string())
     // walk down ap if ap length is greater than current active edge length
     if (old_label.isDefined
       && ap.edge_head.isDefined
       && ap.length >= ap.node.edges(ap.edge_head.get).length(sequence.length))
       walk_down_ap(old_label.get.start + offset)
-    debug(get_active_point_string())
   }
 
   // walk along paths when ap length is greater than current active edge
   private def walk_down_ap(start_at: Int): Unit = {
-    info("walk_down_ap called!")
     ap.edge_head match {
       case Some(head) =>
-        info("edge_head defined")
         var cursor = 0
         var ap_edge = ap.node.edges(head)
         var ap_edge_len = ap_edge.length(sequence.length)
-        info(get_active_point_string())
-        info("ap edge label:" + ap_edge.label)
-        info("ap length:" + ap.length + " ap edge length:" + ap_edge_len)
         while (ap.length != 0 && ap.length >= ap_edge_len) {
           ap.length -= ap_edge_len
           ap.node = ap_edge.to
@@ -311,7 +276,6 @@ class SuffixTree[T] extends Logger {
           } else {
             val next_edge_head = sequence(start_at + cursor + ap_edge_len)
             cursor += ap_edge_len
-            info("in while loop, next edge head is:" + next_edge_head)
             ap.edge_head = Some(next_edge_head)
             ap_edge = ap.node.edges(next_edge_head)
             ap_edge_len = ap_edge.length(sequence.length)
