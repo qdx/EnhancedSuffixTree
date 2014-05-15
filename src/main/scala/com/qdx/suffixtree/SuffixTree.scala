@@ -8,6 +8,8 @@ object SuffixTree {
   val SEQ_END = -1
 }
 
+// Implementing suffix tree using Ukkonen's algorithm, great help from:
+// http://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english
 class SuffixTree[T] extends Logger {
   val sequence = new ArrayBuffer[T]()
 
