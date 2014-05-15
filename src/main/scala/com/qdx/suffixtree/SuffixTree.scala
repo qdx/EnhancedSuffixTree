@@ -43,16 +43,18 @@ class SuffixTree[T] extends Logger {
         debug(get_status_string())
         inserting = true
         val new_node = insert_suffix(remainder_index, i)
-        if (remainder_index >= sequence.length - 1) { loop_flag = false }
+        if (remainder_index >= sequence.length - 1) {
+          loop_flag = false
+        }
         debug("\t\t\t remainder:" + remainder_index + " seq:" + sequence.length)
         debug("\t\t\t defined:" + previous_inserted_node.isDefined)
         debug("\t\t\t ap node:" + get_active_point_string())
         debug("\t\t\t inserting:" + inserting)
+        debug("\t\t\t previous node defined: " + previous_inserted_node.isDefined)
         establish_suffix_link(inserting, false, new_node)
         move_active_point_after_split()
         remainder_index += 1
       }
-      debug("\t previous node defined: " + previous_inserted_node.isDefined)
       debug(get_active_point_string())
     }
   }
@@ -66,7 +68,7 @@ class SuffixTree[T] extends Logger {
         if (inserting) {
           previous_inserted_node match {
             case Some(pnode) =>
-              if (ap.node.type_ == Node.INTERNAL_NODE && !ap.node.equals(pnode)) {
+              if (pnode.suffix_link.isEmpty && ap.node.type_ == Node.INTERNAL_NODE && !ap.node.equals(pnode)) {
                 debug("\t\t suffix link inserted")
                 pnode.suffix_link = Some(ap.node)
               }
@@ -79,8 +81,10 @@ class SuffixTree[T] extends Logger {
           case Some(node) =>
             previous_inserted_node match {
               case Some(pnode) =>
-                pnode.suffix_link = Some(node)
-                debug("\t\t suffix link inserted")
+                if (pnode.suffix_link.isEmpty) {
+                  debug("\t\t suffix link inserted")
+                  pnode.suffix_link = Some(node)
+                }
                 previous_inserted_node = Some(node)
               case None =>
                 previous_inserted_node = Some(node)
@@ -88,7 +92,7 @@ class SuffixTree[T] extends Logger {
           case None =>
             previous_inserted_node match {
               case Some(pnode) =>
-                if (ap.node.type_ == Node.INTERNAL_NODE && !ap.node.equals(pnode)) {
+                if (pnode.suffix_link.isEmpty && ap.node.type_ == Node.INTERNAL_NODE && !ap.node.equals(pnode)) {
                   debug("\t\t suffix link inserted")
                   pnode.suffix_link = Some(ap.node)
                 }
@@ -177,10 +181,11 @@ class SuffixTree[T] extends Logger {
   }
 
   def move_active_point_after_split(): Unit = {
-    val old_ap_label = ap.edge_head match {
+    val old_label = ap.edge_head match {
       case Some(head) => Some(ap.node.edges(head).label)
       case None => None
     }
+    val offset = if (ap.node.type_ == Node.ROOT) 1 else 0
     if (ap.node.type_ == Node.ROOT) {
       ap.edge_head match {
         case Some(head) =>
@@ -195,37 +200,41 @@ class SuffixTree[T] extends Logger {
         case None => ap.node = root
       }
     }
-    old_ap_label match {
-      case Some(label) => walk_down_ap(label)
+    old_label match {
+      case Some(label) =>
+        debug(get_active_point_string())
+        walk_down_ap(label.start + offset)
+        debug(get_active_point_string())
       case None =>
     }
     skip_edge()
   }
 
-  def walk_down_ap(old_label: Label): Unit = {
-    debug("*** walk_down_ap called!***")
+  def walk_down_ap(start_at: Int): Unit = {
+    info("walk_down_ap called!")
     ap.edge_head match {
       case Some(head) =>
-        val ap_edge = ap.node.edges(head)
-        if (ap.length > ap_edge.length(sequence.length)) {
-          var slice = sequence.slice(old_label.start, old_label.start + ap.length)
-          var new_active_edge = ap.node.edges(head)
-          debug("\tnew active edge length:" + new_active_edge.length(sequence.length))
-          while (new_active_edge.length(sequence.length) < ap.length) {
-            slice = slice.slice(new_active_edge.length(sequence.length), slice.length)
-            ap.length -= new_active_edge.length(sequence.length)
-            ap.node = ap.node.edges(ap.edge_head.get).to
-            if (ap.length == 0) {
-              ap.edge_head = None
-            } else if (ap.length > 0) {
-              ap.edge_head = Some(slice.head)
-              new_active_edge = ap.node.edges(ap.edge_head.get)
-            } else {
-              debug("active length should never be less than 0!")
-              System.exit(-1)
-            }
+        info("edge_head defined")
+        var ap_edge = ap.node.edges(head)
+        var ap_edge_len = ap_edge.length(sequence.length)
+        var cursor = 0
+        info(get_active_point_string())
+        info("ap edge label:" + ap_edge.label)
+        info("ap length:" + ap.length + " ap edge length:" + ap_edge_len)
+        while (ap.length != 0 && ap.length >= ap_edge_len) {
+          val next_edge_head = sequence(start_at + cursor + ap_edge_len)
+          cursor += ap_edge_len
+          info("in while loop, next edge head is:" + next_edge_head)
+          ap.length -= ap_edge_len
+          ap.node = ap_edge.to
+          if (ap.length == 0) {
+            ap.edge_head = None
+          } else {
+            ap.edge_head = Some(next_edge_head)
+            ap_edge = ap.node.edges(next_edge_head)
+            ap_edge_len = ap_edge.length(sequence.length)
           }
-        } else Unit
+        }
       case None => Unit
     }
 
