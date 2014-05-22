@@ -16,11 +16,12 @@ object Pattern {
   Range('A', 'Z').foreach(c => LITERAL_SET += c.toChar)
   LITERAL_SET += '_'
   LITERAL_SET += ','
-  LITERAL_SET += '.'
+  LITERAL_SET += '!'
   LITERAL_SET += ' '
   LITERAL_SET += '\n'
   LITERAL_SET += '\r'
   LITERAL_SET += '\''
+  LITERAL_SET ++= OPERATOR_PRECEDENCE.keySet
 
   val OPERATOR_PRECEDENCE = new mutable.HashMap[Char, Int]()
   OPERATOR_PRECEDENCE('(') = 1
@@ -32,7 +33,7 @@ object Pattern {
   OPERATOR_PRECEDENCE('+') = 4
 
   OPERATOR_PRECEDENCE('.') = 6
-  OPERATOR_PRECEDENCE('\\') = 6
+  OPERATOR_PRECEDENCE('\\') = 7
 
   val UNARY_OPERATOR = Array('?', '*', '+')
   val BINARY_OPERATOR = Array('|')
@@ -236,8 +237,23 @@ class Pattern(p: String) extends Logger {
           stack.push(c)
       }
     }
+    //TODO: refactor this into a method
+    // the following is to swap the \ and any character after it in the postfix expression
     while (stack.nonEmpty) result.append(stack.pop())
-    result.toString()
+    val swap_escape = result.toString().toCharArray
+    var skip = false
+    for(i <- Range(0, swap_escape.length)){
+      if(!skip) {
+        if (swap_escape(i) == '\\') {
+          swap_escape(i) = swap_escape(i + 1)
+          swap_escape(i + 1) = '\\'
+          skip = true
+        }
+      }else{
+        skip = false
+      }
+    }
+    swap_escape.mkString
   }
 
   // McMaughton-Yamada-Thompson algorithm which transform postfix regex into nfa
@@ -388,11 +404,7 @@ class Pattern(p: String) extends Logger {
 
   private def move(via: Char, states: Iterable[State]): mutable.HashSet[State] = {
     val result = new mutable.HashSet[State]()
-    for (s <- states) {
-      if (s.to.contains(via)) {
-        result ++= s.to(via)
-      }
-    }
+    states.filter(s => s.to.contains(via)).foreach(ms => result ++= ms.to(via))
     result
   }
 
