@@ -15,6 +15,11 @@ object Pattern {
   Range('a', 'z').foreach(c => LITERAL_SET += c.toChar)
   Range('A', 'Z').foreach(c => LITERAL_SET += c.toChar)
   LITERAL_SET += '_'
+  LITERAL_SET += ','
+  LITERAL_SET += '.'
+  LITERAL_SET += ' '
+  LITERAL_SET += '\n'
+  LITERAL_SET += '\r'
   LITERAL_SET += '\''
 
   val OPERATOR_PRECEDENCE = new mutable.HashMap[Char, Int]()
@@ -39,7 +44,7 @@ object Pattern {
 }
 
 class Pattern(p: String) extends Logger {
-  log_level = Logger.DEBUG
+  log_level = Logger.ERROR
   val dfa = regex_to_dfa(p)
 
   def search_pattern(t: SuffixTree[Char]): ArrayBuffer[(Int, Int)] = {
@@ -64,7 +69,7 @@ class Pattern(p: String) extends Logger {
         val previous_accept_state = match_str._4
         debug("matched: " + match_count)
         debug("accepted: " + accept_count)
-        println("previous is:" + previous_accept_state.isDefined)
+        debug("previous is:" + previous_accept_state.isDefined)
 
         // only when match_count == label.length && the recursive search result is
         // not empty we will discard previous accept state
@@ -81,7 +86,7 @@ class Pattern(p: String) extends Logger {
         recur_search_result match {
           case Some(r) => result ++= r
           case None =>
-            println("after recur 0 size, previous is:" + previous_accept_state.isDefined)
+            debug("after recur 0 size, previous is:" + previous_accept_state.isDefined)
 
             if (previous_accept_state.isDefined || pa > 0)
               t.breadth_first_traverse(v.to)
