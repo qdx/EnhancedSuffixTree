@@ -5,34 +5,113 @@ import scala.util.Random
 import com.qdx.suffixtree.SuffixTree
 import com.qdx.suffixtree.Node
 import com.qdx.logging.Logger
+import com.qdx.regex.Pattern
+import scala.util.matching.Regex
+import java.io._
 
 object StreamAutomatonAdjacencyList extends App {
 
   //  stream_automaton_test()
   //  transition_test()
 
-  //  suffix_tree_test_dedododeeodo()
-  //  suffix_tree_test_abcabxabcd()
-  //  suffix_tree_test_abc_all()
-  val test_cases = Array(
-    "abcabxabcd",
-    "dedododeeodo",
-    "vvivvv",
-    "bldfbdbdf",
-    "mhmehmnhm",
-    "qfqufquqfq",
-    "wwtotwto",
-    "knunuknuxknu"
-  )
-  for (c <- test_cases) {
-    if (manual_test_suffix_tree(c, '#')) {
-      println("test for:" + c + " passed")
-    } else {
-      println("test for:" + c + " failed")
+  //  exact_path_search_test()
+  //  special_suffix_tree_tests()
+  //  manual_test_suffix_tree("abcabxabcd", '#')
+  regex_search_test()
+
+  def post_fix_test(): Unit = {
+    val test_cases = Array(
+      //      "abc"
+      //      "(a.b).c"
+      //      "(a\\b)c",
+      //      "a(bc)",
+      //      "ab|c",
+      //      "ab+c",
+      //      "a*bc",
+      //      "asdf?",
+      //      "a(b.c)+d?",
+      //        "a*(b|cd?)+"
+      //      "a(b\\c|d*e\\f)+|(gh)+"
+      "ab(c|e|f)"
+    )
+    for (t <- Range(0, test_cases.length)) {
+      val pattern = new Pattern(test_cases(t))
+      println(pattern.show())
+      //      println(nfa.show())
+    }
+
+  }
+
+  def special_suffix_tree_tests(): Unit = {
+    val test_cases = Array(
+      "abcabxabcd",
+      "dedododeeodo",
+      "vvivvv",
+      "bldfbdbdf",
+      "mhmehmnhm",
+      "qfqufquqfq",
+      "wwtotwto",
+      "knunuknuxknu"
+    )
+    for (c <- test_cases) {
+      if (manual_test_suffix_tree(c, '#')) {
+        println("test for:" + c + " passed")
+      } else {
+        println("test for:" + c + " failed")
+      }
     }
   }
 
-  def manual_test_suffix_tree[T](s: Iterable[T], terminal: T, log_level: Int = Logger.ERROR): Boolean = {
+  def regex_search_test(): Unit = {
+    val search_suffix_tree = new SuffixTree[Char]
+    search_suffix_tree.log_level = Logger.ERROR
+    val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString + "~"
+    search_suffix_tree.batch_input(target)
+
+    val test_cases = Array("this", "what", "\\(", "(power|act) +of +a?", "(suf*icient|proximate)+,? and+")
+    for (t <- test_cases) {
+      val scala_regex = new Regex(t)
+      val sr_match = scala_regex findAllMatchIn target
+      val sr_set = new mutable.HashSet[(Int, Int)]()
+      sr_match.foreach(m => sr_set.add((m.start, m.end - m.start)))
+      val my_regex = new Pattern(t)
+      val my_set = new mutable.HashSet[(Int, Int)]()
+      val my_result = my_regex.search_pattern(search_suffix_tree)
+      my_result.foreach(m => my_set.add(m))
+      if(sr_set.equals(my_set)){
+        println(s"test case $t passed")
+      }else{
+        println(s"test case $t failed")
+        println(s"scala has size:${sr_set.size}, mine has size:${my_set.size}")
+        /* output test result to findout where is wrong
+        val sf = new File("./scala_regex.txt")
+        val sout = new PrintWriter(sf)
+//        sr_set.foreach(m => sout.println(search_suffix_tree.sequence.slice(m._1, m._1 + m._2).mkString))
+        sr_set.toArray.sorted.foreach(m => sout.println(s"(${m._1},${m._2})"))
+        sout.close()
+        val mf = new File("./my_regex.txt")
+        val myout = new PrintWriter(mf)
+//        my_set.foreach(m => myout.println(search_suffix_tree.sequence.slice(m._1, m._1 + m._2).mkString))
+        my_set.toArray.sorted.foreach(m => myout.println(s"(${m._1},${m._2})"))
+        myout.close()
+        */
+      }
+    }
+  }
+
+
+  def exact_path_search_test(): Unit = {
+    val search_suffix_tree = new SuffixTree[Char]
+    search_suffix_tree.log_level = Logger.ERROR
+
+    search_suffix_tree.batch_input(io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString + "~")
+    //  println(search_suffix_tree.show())
+    val search_result = search_suffix_tree.search("good")
+    println(search_result.size)
+    println(search_result.mkString(","))
+  }
+
+  def manual_test_suffix_tree[T](s: Iterable[T], terminal: T, log_level: Int = Logger.DEBUG): Boolean = {
     val test = new SuffixTree[T]
     test.log_level = log_level
     var counter = 0
@@ -51,63 +130,6 @@ object StreamAutomatonAdjacencyList extends App {
     }
     if (leaf_c == counter + 1) true else false
   }
-
-  def suffix_tree_test_abc_all(): Unit = {
-    val test = new SuffixTree[Char]
-    test.insert('a')
-    test.insert('b')
-    test.insert('c')
-    test.insert('a')
-    test.insert('b')
-    test.insert('c')
-    test.insert('a')
-    test.insert('b')
-    test.insert('c')
-    test.insert('a')
-    test.insert('b')
-    test.insert('c')
-    test.insert('a')
-    test.insert('b')
-    test.insert('c')
-    test.insert('d')
-    test.show()
-
-  }
-
-  def suffix_tree_test_dedododeeodo(): Unit = {
-    val test = new SuffixTree[Char]
-    test.insert('d')
-    test.insert('e')
-    test.insert('d')
-    test.insert('o')
-    test.insert('d')
-    test.insert('o')
-    test.insert('d')
-    test.insert('e')
-    test.insert('e')
-    test.insert('o')
-    test.insert('d')
-    test.insert('o')
-    test.insert('k')
-    test.show()
-
-  }
-
-  def suffix_tree_test_abcabxabcd(): Unit = {
-    val test = new SuffixTree[Char]
-    test.insert('a')
-    test.insert('b')
-    test.insert('c')
-    test.insert('a')
-    test.insert('b')
-    test.insert('x')
-    test.insert('a')
-    test.insert('b')
-    test.insert('c')
-    test.insert('d')
-    test.show()
-  }
-
 
   def stream_automaton_test(): Unit = {
     val x = new StreamAutomatonAdjacencyList()
