@@ -7,7 +7,6 @@ import com.qdx.suffixtree.Node
 import com.qdx.logging.Logger
 import com.qdx.regex.Pattern
 import scala.util.matching.Regex
-import java.io._
 
 object StreamAutomatonAdjacencyList extends App {
 
@@ -17,7 +16,18 @@ object StreamAutomatonAdjacencyList extends App {
   //  exact_path_search_test()
   //  special_suffix_tree_tests()
   //  manual_test_suffix_tree("abcabxabcd", '#')
-  regex_search_test()
+  //  regex_search_test()
+
+  val tree = new SuffixTree[Char]
+  tree.batch_input("Today is a good day")
+  println(tree.show())
+  println("Input regex to query the suffix tree")
+  while(true) {
+    val input = Console.readLine()
+    val p = new Pattern(input)
+//    println(p.search_pattern(tree).mkString(", "))
+  }
+
 
   def post_fix_test(): Unit = {
     val test_cases = Array(
@@ -78,9 +88,9 @@ object StreamAutomatonAdjacencyList extends App {
       val my_set = new mutable.HashSet[(Int, Int)]()
       val my_result = my_regex.search_pattern(search_suffix_tree)
       my_result.foreach(m => my_set.add(m))
-      if(sr_set.equals(my_set)){
+      if (sr_set.equals(my_set)) {
         println(s"test case $t passed")
-      }else{
+      } else {
         println(s"test case $t failed")
         println(s"scala has size:${sr_set.size}, mine has size:${my_set.size}")
         /* output test result to findout where is wrong
