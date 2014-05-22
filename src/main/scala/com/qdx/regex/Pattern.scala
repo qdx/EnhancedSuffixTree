@@ -3,6 +3,7 @@ package com.qdx.regex
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import com.qdx.logging.Logger
+import com.qdx.suffixtree._
 
 object Pattern {
   // some special characters used to handle inner representation
@@ -38,8 +39,101 @@ object Pattern {
 }
 
 class Pattern(p: String) extends Logger {
-  log_level = Logger.ERROR
+  log_level = Logger.DEBUG
   val dfa = regex_to_dfa(p)
+
+  def search_pattern(t: SuffixTree[Char]): ArrayBuffer[(Int, Int)] = {
+    search_pattern_routine(dfa.start, t, t.root, 0, 0)
+  }
+
+  private def search_pattern_routine(s: State, t: SuffixTree[Char], n: Node[Char], l: Int, pa: Int): ArrayBuffer[(Int, Int)] = {
+    val result = new ArrayBuffer[(Int, Int)]()
+    if (n.type_ == Node.LEAF_NODE) {
+      result.append((n.search_index_, l))
+    }
+    else {
+      for ((k, v) <- n.edges) {
+        // TODO: refactor the following two lines into a method
+        val label = v.get_label_seq(t.sequence)
+        debug("searching label:" + label)
+        debug("from state: " + s.to.keys.mkString)
+        val match_str = match_string(label.mkString, s)
+        val match_count = match_str._1
+        val match_state = match_str._2
+        val accept_count = match_str._3
+        val previous_accept_state = match_str._4
+        debug("matched: " + match_count)
+        debug("accepted: " + accept_count)
+        println("previous is:" + previous_accept_state.isDefined)
+
+        // only when match_count == label.length && the recursive search result is
+        // not empty we will discard previous accept state
+        val recur_search_result =
+          if (match_count == label.length) {
+            val accept_lenth = if (accept_count > 0) l + accept_count else pa
+            val r = search_pattern_routine(match_state.get, t, v.to, l + match_count, accept_lenth)
+            debug("recur search result size: " + r.size)
+            if (r.size > 0) Some(r)
+            else None
+          }
+          else None
+
+        recur_search_result match {
+          case Some(r) => result ++= r
+          case None =>
+            println("after recur 0 size, previous is:" + previous_accept_state.isDefined)
+
+            if (previous_accept_state.isDefined || pa > 0)
+              t.breadth_first_traverse(v.to)
+                .filter(n => n.type_ == Node.LEAF_NODE)
+                .foreach(leaf => result.append((leaf.search_index_, l + accept_count)))
+        }
+      }
+    }
+    result
+  }
+
+
+  def match_string(str: String, s: State = dfa.start): (Int, Option[State], Int, Option[State]) = {
+    var previous_accept_state = None: Option[State]
+    var match_count = 0
+    var match_flag = true
+    var match_state = Some(s): Option[State]
+    var accept_match_count = 0
+    while (match_flag && match_count < str.length) {
+      val try_match = match_one_char(str(match_count), match_state.get)
+      if (try_match.isEmpty) match_flag = false
+      else {
+        match_count += 1
+        match_state = try_match
+        if (match_state.get.accept) {
+          previous_accept_state = try_match
+          accept_match_count = match_count
+        }
+      }
+    }
+    (match_count, match_state, accept_match_count, previous_accept_state)
+  }
+
+  def match_one_char(c: Char, s: State = dfa.start): Option[State] = {
+    val c_flag = s.to.contains(c)
+    val a_flag = s.to.contains(Pattern.ANY)
+    (c_flag, a_flag) match {
+      case (false, false) => None
+      case (false, true) =>
+        val matches = s.to(Pattern.ANY)
+        // dfa only has one targe state for each transition
+        assert(matches.length == 1)
+        Some(matches(0))
+      case (true, false) =>
+        val matches = s.to(c)
+        assert(matches.length == 1)
+        Some(matches(0))
+      case (true, true) =>
+        error("This case which contains . operator is not handled yet!")
+        None
+    }
+  }
 
   def regex_to_dfa(re: String): FiniteAutomaton = {
     val postfix = infix_to_postfix(add_explicit_concat(re))
@@ -240,7 +334,6 @@ class Pattern(p: String) extends Logger {
   // subset construction algorithm to transform nfa into dfa, which uses
   // helper method move() and epsilon_closure() below.
   private def nfa_to_dfa(nfa: FiniteAutomaton): FiniteAutomaton = {
-    println(show(nfa))
     val dfa = new FiniteAutomaton
 
     // prepare the start state
@@ -288,8 +381,8 @@ class Pattern(p: String) extends Logger {
     dfa
   }
 
-  private def move(via: Char, states: Iterable[State]): ArrayBuffer[State] = {
-    val result = new ArrayBuffer[State]()
+  private def move(via: Char, states: Iterable[State]): mutable.HashSet[State] = {
+    val result = new mutable.HashSet[State]()
     for (s <- states) {
       if (s.to.contains(via)) {
         result ++= s.to(via)

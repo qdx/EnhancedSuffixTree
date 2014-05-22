@@ -11,6 +11,7 @@ object SuffixTree {
 // Implementing suffix tree using Ukkonen's algorithm, great help from:
 // http://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english
 class SuffixTree[T] extends Logger {
+  log_level = Logger.ERROR
   val sequence = new ArrayBuffer[T]()
 
   val root = new Node[T](0)
@@ -68,8 +69,8 @@ class SuffixTree[T] extends Logger {
 
   // standard BFS traverse of the tree that returns a list of the nodes
   def breadth_first_traverse(root_node: Node[T] = root): ArrayBuffer[Node[T]] = {
-    val queue = new mutable.Queue[Node[T]]()
     val result = new mutable.ArrayBuffer[Node[T]]()
+    val queue = new mutable.Queue[Node[T]]()
     queue.enqueue(root_node)
     while (queue.length > 0) {
       val s = queue.length
@@ -113,12 +114,12 @@ class SuffixTree[T] extends Logger {
         matching_point.length = 0
       }
     }
-    val terminating_at = matching_point.edge_head match{
+    val terminating_at = matching_point.edge_head match {
       case Some(head) => matching_point.node.edges(head).to
       case None => matching_point.node
     }
-    for(n <- breadth_first_traverse(terminating_at))
-      if(n.type_ == Node.LEAF_NODE) result.append(n.search_index_)
+    for (n <- breadth_first_traverse(terminating_at))
+      if (n.type_ == Node.LEAF_NODE) result.append(n.search_index_)
     result
   }
 
