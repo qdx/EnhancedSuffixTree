@@ -9,7 +9,7 @@ class Edge[T](start: Int, end: Int, to_node: Node[T]) {
   var label = new Label(start, end)
   var to = to_node
 
-  // TODO: refactor this method to eliminate the parameter
+  // ALTERNATE: refactor this method to eliminate the parameter
   def length(seq_length: Int): Int = {
     if (label.end == -1) seq_length - label.start else label.end - label.start + 1
   }

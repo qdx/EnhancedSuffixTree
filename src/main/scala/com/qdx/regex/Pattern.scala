@@ -62,7 +62,6 @@ class Pattern(p: String) extends Logger {
     }
     else {
       for ((k, v) <- n.edges) {
-        // TODO: refactor the following two lines into a method
         val label = v.get_label_seq(t.sequence)
         debug("searching label:" + label)
         val match_str = match_string(label.mkString, s)
@@ -238,9 +237,10 @@ class Pattern(p: String) extends Logger {
           stack.push(c)
       }
     }
-    //TODO: refactor this into a method
-    // the following is to swap the \ and any character after it in the postfix expression
     while (stack.nonEmpty) result.append(stack.pop())
+
+    // ALTERNATE: refactor this into a method
+    // the following is to swap the \ and any character after it in the postfix expression
     val swap_escape = result.toString().toCharArray
     var skip = false
     for(i <- Range(0, swap_escape.length - 1)){
