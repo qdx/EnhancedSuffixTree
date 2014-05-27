@@ -14,8 +14,8 @@ libraryDependencies ++= Seq(
   //  "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   //  "ch.qos.logback" % "logback-classic" % "1.1.2",
   "org.scalacheck" %% "scalacheck" % "1.11.4" % "test",
-    "com.typesafe.akka" %% "akka-actor" % "2.3.3"
-//  "com.typesafe.akka" % "akka-actor_2.10" % "2.4-SNAPSHOT"
+  "com.typesafe.akka" %% "akka-actor" % "2.3.3"
+  //  "com.typesafe.akka" % "akka-actor_2.10" % "2.4-SNAPSHOT"
   // "org.eintr.loglady" %% "loglady" % "1.1.0"
 )
 
