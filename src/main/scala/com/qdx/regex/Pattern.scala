@@ -11,18 +11,6 @@ object Pattern {
   val EPSILON = 7.toChar
   val ANY = 6.toChar
 
-  val LITERAL_SET = new mutable.HashSet[Char]
-  Range('a', 'z').foreach(c => LITERAL_SET += c.toChar)
-  Range('A', 'Z').foreach(c => LITERAL_SET += c.toChar)
-  LITERAL_SET += '_'
-  LITERAL_SET += ','
-  LITERAL_SET += '!'
-  LITERAL_SET += ' '
-  LITERAL_SET += '\n'
-  LITERAL_SET += '\r'
-  LITERAL_SET += '\''
-  LITERAL_SET ++= OPERATOR_PRECEDENCE.keySet
-
   val OPERATOR_PRECEDENCE = new mutable.HashMap[Char, Int]()
   OPERATOR_PRECEDENCE('(') = 1
   OPERATOR_PRECEDENCE('|') = 2
@@ -34,6 +22,19 @@ object Pattern {
 
   OPERATOR_PRECEDENCE('.') = 6
   OPERATOR_PRECEDENCE('\\') = 7
+
+
+  val LITERAL_SET = new mutable.HashSet[Char]
+  Range('a', 'z').foreach(c => LITERAL_SET += c.toChar)
+  Range('A', 'Z').foreach(c => LITERAL_SET += c.toChar)
+  LITERAL_SET += '_'
+  LITERAL_SET += ','
+  LITERAL_SET += '!'
+  LITERAL_SET += ' '
+  LITERAL_SET += '\n'
+  LITERAL_SET += '\r'
+  LITERAL_SET += '\''
+  LITERAL_SET ++= OPERATOR_PRECEDENCE.keySet
 
   val UNARY_OPERATOR = Array('?', '*', '+')
   val BINARY_OPERATOR = Array('|')
@@ -106,13 +107,14 @@ class Pattern(p: String) extends Logger {
     var match_count = 0
     var match_flag = true
     var match_state = new mutable.HashSet[State]()
+    match_state ++= s
     var accept_match_count = 0
     while (match_flag && match_count < str.length) {
       val try_match = match_one_char(str(match_count), match_state)
-      if (try_match.isEmpty) match_flag = false
+      if (try_match.size == 0) match_flag = false
       else {
         match_count += 1
-        match_state ++= try_match
+        match_state = try_match
         if (match_state.exists(p => p.accept)) {
           previous_accept_state ++= try_match
           accept_match_count = match_count
@@ -241,7 +243,7 @@ class Pattern(p: String) extends Logger {
     while (stack.nonEmpty) result.append(stack.pop())
     val swap_escape = result.toString().toCharArray
     var skip = false
-    for(i <- Range(0, swap_escape.length)){
+    for(i <- Range(0, swap_escape.length - 1)){
       if(!skip) {
         if (swap_escape(i) == '\\') {
           swap_escape(i) = swap_escape(i + 1)
