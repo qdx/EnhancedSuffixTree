@@ -7,6 +7,7 @@ import com.qdx.suffixtree.Node
 import com.qdx.logging.Logger
 import com.qdx.regex.Pattern
 import scala.util.matching.Regex
+import java.io.{PrintWriter, File}
 
 object StreamAutomatonAdjacencyList extends App {
 
@@ -16,16 +17,19 @@ object StreamAutomatonAdjacencyList extends App {
   //  exact_path_search_test()
   //  special_suffix_tree_tests()
   //  manual_test_suffix_tree("abcabxabcd", '#')
-  //  regex_search_test()
+    regex_search_test()
 
-  val tree = new SuffixTree[Char]
-  tree.batch_input("Today is a good day")
-  println(tree.show())
-  println("Input regex to query the suffix tree")
-  while(true) {
-    val input = Console.readLine()
-    val p = new Pattern(input)
-//    println(p.search_pattern(tree).mkString(", "))
+
+  def demo(): Unit = {
+    val tree = new SuffixTree[Char]
+    tree.batch_input("Today is a good day?")
+    println(tree.show())
+    println("Input regex to query the suffix tree")
+    while(true) {
+      val input = Console.readLine()
+      val p = new Pattern(input)
+      println(p.search_pattern(tree).mkString(", "))
+    }
   }
 
 
@@ -78,16 +82,27 @@ object StreamAutomatonAdjacencyList extends App {
     val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString + "~"
     search_suffix_tree.batch_input(target)
 
-    val test_cases = Array("this", "what", "\\(", "(power|act) +of +a?", "(suf*icient|proximate)+,? and+")
+    val test_cases = Array(
+      "this", "what",
+      "\\(",
+      "(power|a.t) +of +a?",
+      "(suf*icient|proximate)+,? and+",
+      "go.",
+      "\\(...") // the last test case did not pass, but is okay, it is problem of different convention of . operator
     for (t <- test_cases) {
+      // scala regex search
       val scala_regex = new Regex(t)
       val sr_match = scala_regex findAllMatchIn target
       val sr_set = new mutable.HashSet[(Int, Int)]()
       sr_match.foreach(m => sr_set.add((m.start, m.end - m.start)))
+
+      // suffix regex search
       val my_regex = new Pattern(t)
       val my_set = new mutable.HashSet[(Int, Int)]()
       val my_result = my_regex.search_pattern(search_suffix_tree)
       my_result.foreach(m => my_set.add(m))
+
+      // comparing the results from above
       if (sr_set.equals(my_set)) {
         println(s"test case $t passed")
       } else {
