@@ -1,6 +1,6 @@
 package com.qdx.regex
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 import scala.collection.mutable.ArrayBuffer
 import com.qdx.logging.Logger
 import com.qdx.suffixtree._
@@ -11,7 +11,7 @@ object Pattern {
   val EPSILON = 7.toChar
   val ANY = 6.toChar
 
-  val OPERATOR_PRECEDENCE = new mutable.HashMap[Char, Int]()
+  val OPERATOR_PRECEDENCE = new m.HashMap[Char, Int]()
   OPERATOR_PRECEDENCE('(') = 1
   OPERATOR_PRECEDENCE('|') = 2
   OPERATOR_PRECEDENCE(CONCAT) = 3
@@ -24,7 +24,7 @@ object Pattern {
   OPERATOR_PRECEDENCE('\\') = 7
 
 
-  val LITERAL_SET = new mutable.HashSet[Char]
+  val LITERAL_SET = new m.HashSet[Char]
   Range('a', 'z').foreach(c => LITERAL_SET += c.toChar)
   Range('A', 'Z').foreach(c => LITERAL_SET += c.toChar)
   LITERAL_SET += '_'
@@ -47,110 +47,12 @@ object Pattern {
 
 class Pattern(p: String) extends Logger {
   log_level = Logger.ERROR
-  val dfa = regex_to_dfa(p)
-
-  def search_pattern(t: SuffixTree[Char]): ArrayBuffer[(Int, Int)] = {
-    val start = new mutable.HashSet[State]()
-    start.add(dfa.start)
-    search_pattern_routine(start, t, t.root, 0, 0)
-  }
-
-  private def search_pattern_routine(s: mutable.HashSet[State], t: SuffixTree[Char], n: Node[Char], l: Int, pa: Int): ArrayBuffer[(Int, Int)] = {
-    val result = new ArrayBuffer[(Int, Int)]()
-    if (n.type_ == Node.LEAF_NODE) {
-      result.append((n.search_index_, l))
-    }
-    else {
-      for ((k, v) <- n.edges) {
-        val label = v.get_label_seq(t.sequence)
-        debug("searching label:" + label)
-        val match_str = match_string(label.mkString, s)
-        val match_count = match_str._1
-        val match_state = match_str._2
-        val accept_count = match_str._3
-        val previous_accept_state = match_str._4
-        debug("matched: " + match_count)
-        debug("accepted: " + accept_count)
-        debug("previous is:" + previous_accept_state.size)
-
-        // only when match_count == label.length && the recursive search result is
-        // not empty we will discard previous accept state
-        val recur_search_result =
-          if (match_count == label.length) {
-            val accept_lenth = if (accept_count > 0) l + accept_count else pa
-            val r = search_pattern_routine(match_state, t, v.to, l + match_count, accept_lenth)
-            debug("recur search result size: " + r.size)
-            if (r.size > 0) Some(r)
-            else None
-          }
-          else None
-
-        recur_search_result match {
-          case Some(r) => result ++= r
-          case None =>
-            debug("after recur 0 size, previous is:" + previous_accept_state.size)
-
-            if (previous_accept_state.size > 0 || pa > 0)
-              t.breadth_first_traverse(v.to)
-                .filter(n => n.type_ == Node.LEAF_NODE)
-                .foreach(leaf => result.append((leaf.search_index_, l + accept_count)))
-        }
-      }
-    }
-    result
-  }
-
-
-  def match_string(str: String, s: mutable.HashSet[State]): (Int, mutable.HashSet[State], Int, mutable.HashSet[State]) = {
-    var previous_accept_state = new mutable.HashSet[State]()
-    var match_count = 0
-    var match_flag = true
-    var match_state = new mutable.HashSet[State]()
-    match_state ++= s
-    var accept_match_count = 0
-    while (match_flag && match_count < str.length) {
-      val try_match = match_one_char(str(match_count), match_state)
-      if (try_match.size == 0) match_flag = false
-      else {
-        match_count += 1
-        match_state = try_match
-        if (match_state.exists(p => p.accept)) {
-          previous_accept_state ++= try_match
-          accept_match_count = match_count
-        }
-      }
-    }
-    (match_count, match_state, accept_match_count, previous_accept_state)
-  }
-
-  def match_one_char(c: Char, s: mutable.HashSet[State]): mutable.HashSet[State] = {
-    val result = new mutable.HashSet[State]()
-    val c_flag = s.exists(p => p.to.contains(c))
-    val a_flag = s.exists(p => p.to.contains(Pattern.ANY))
-    (c_flag, a_flag) match {
-      case (false, false) => Unit
-      case (false, true) =>
-        s.foreach(s => result ++= s.to(Pattern.ANY))
-      case (true, false) =>
-        s.foreach(s => result ++= s.to(c))
-      case (true, true) =>
-        s.foreach(s => result ++= s.to(Pattern.ANY))
-        s.foreach(s => result ++= s.to(c))
-    }
-    result
-  }
-
-  def regex_to_dfa(re: String): FiniteAutomaton = {
-    val add_concat = add_explicit_concat(re)
-    val postfix = infix_to_postfix(add_concat)
-    val nfa = postfix_to_nfa(postfix)
-    nfa_to_dfa(nfa)
-  }
+  private val dfa = regex_to_dfa(p)
 
   // print the FA into a dot language string
   def show(fa: FiniteAutomaton = dfa): String = {
-    val id_map = mutable.HashMap[State, Int]()
-    val queue = new mutable.Queue[State]()
+    val id_map = m.HashMap[State, Int]()
+    val queue = new m.Queue[State]()
     queue.enqueue(fa.start)
 
     val visited = ArrayBuffer[Int]()
@@ -166,7 +68,7 @@ class Pattern(p: String) extends Logger {
     while (queue.nonEmpty) {
       val s = queue.length
 
-      val add_queue = new mutable.Queue[State]()
+      val add_queue = new m.Queue[State]()
 
       for (n <- queue) {
         for ((k, v) <- n.to) {
@@ -200,8 +102,111 @@ class Pattern(p: String) extends Logger {
     sb.toString()
   }
 
+  def search_pattern(t: SuffixTree[Char]): ArrayBuffer[(Int, Int)] = {
+    val start = new m.HashSet[State]()
+    start.add(dfa.start)
+    search_pattern_routine(start, t, t.root, 0, 0)
+  }
+
+  // recursive search regex pattern on the suffix tree
+  private def search_pattern_routine(s: m.HashSet[State],
+                                     t: SuffixTree[Char],
+                                     n: Node[Char],
+                                     l: Int,
+                                     previous_accept_length: Int): ArrayBuffer[(Int, Int)] = {
+    val result = new ArrayBuffer[(Int, Int)]()
+    if (n.type_ == Node.LEAF_NODE) {
+      result.append((n.search_index_, l))
+    } else {
+      for ((k, v) <- n.edges) {
+        val label = v.get_label_seq(t.sequence)
+        debug("searching label:" + label)
+        // ALTERNATE: there should be a better way to unpack the returned results
+        val match_str = match_string(label.mkString, s)
+        val match_count = match_str._1
+        val match_state = match_str._2
+        val accept_count = match_str._3
+        val previous_accept_state = match_str._4
+        debug("matched: " + match_count)
+        debug("accepted: " + accept_count)
+        debug("previous is:" + previous_accept_state.size)
+
+        // only when match_count == label.length && the recursive search result is
+        // not empty we will discard previous accept state
+        val recur_search_result =
+          if (match_count == label.length) {
+            val accept_length = if (accept_count > 0) l + accept_count else previous_accept_length
+            val r = search_pattern_routine(match_state, t, v.to, l + match_count, accept_length)
+            debug("recur search result size: " + r.size)
+            if (r.size > 0) Some(r)
+            else None
+          }
+          else None
+
+        recur_search_result match {
+          case Some(r) => result ++= r
+          case None =>
+            debug("after recur 0 size, previous is:" + previous_accept_state.size)
+            if (previous_accept_state.size > 0 || previous_accept_length > 0)
+              t.breadth_first_traverse(v.to)
+                .filter(n => n.type_ == Node.LEAF_NODE)
+                .foreach(leaf => result.append((leaf.search_index_, l + accept_count)))
+        }
+      }
+    }
+    result
+  }
+
+  // try to match a sequence of characters based on current states in the DFA
+  private def match_string(str: String, s: m.HashSet[State]): (Int, m.HashSet[State], Int, m.HashSet[State]) = {
+    var previous_accept_state = new m.HashSet[State]()
+    var match_count = 0
+    var match_flag = true
+    var match_state = new m.HashSet[State]()
+    match_state ++= s
+    var accept_match_count = 0
+    while (match_flag && match_count < str.length) {
+      val try_match = match_one_char(str(match_count), match_state)
+      if (try_match.size == 0) match_flag = false
+      else {
+        match_count += 1
+        match_state = try_match
+        if (match_state.exists(p => p.accept)) {
+          previous_accept_state ++= try_match
+          accept_match_count = match_count
+        }
+      }
+    }
+    (match_count, match_state, accept_match_count, previous_accept_state)
+  }
+
+  // try to match one character based on current states in the DFA
+  private def match_one_char(c: Char, s: m.HashSet[State]): m.HashSet[State] = {
+    val result = new m.HashSet[State]()
+    val c_flag = s.exists(p => p.to.contains(c))
+    val a_flag = s.exists(p => p.to.contains(Pattern.ANY))
+    (c_flag, a_flag) match {
+      case (false, false) => Unit
+      case (false, true) =>
+        s.foreach(s => result ++= s.to(Pattern.ANY))
+      case (true, false) =>
+        s.foreach(s => result ++= s.to(c))
+      case (true, true) =>
+        s.foreach(s => result ++= s.to(Pattern.ANY))
+        s.foreach(s => result ++= s.to(c))
+    }
+    result
+  }
+
+  def regex_to_dfa(re: String): FiniteAutomaton = {
+    val add_concat = add_explicit_concat(re)
+    val postfix = infix_to_postfix(add_concat)
+    val nfa = postfix_to_nfa(postfix)
+    nfa_to_dfa(nfa)
+  }
+
   private def add_explicit_concat(re: String): String = {
-    val result = new mutable.StringBuilder()
+    val result = new m.StringBuilder()
     var prev = None: Option[Char]
     for (c <- re) {
       val p = prev.getOrElse()
@@ -222,8 +227,8 @@ class Pattern(p: String) extends Logger {
 
   // standard stack to postfix approach
   private def infix_to_postfix(postfix_re: String): String = {
-    val stack = new mutable.Stack[Char]()
-    val result = new mutable.StringBuilder()
+    val stack = new m.Stack[Char]()
+    val result = new m.StringBuilder()
     for (c <- postfix_re) {
       c match {
         case '(' => stack.push(c)
@@ -243,14 +248,14 @@ class Pattern(p: String) extends Logger {
     // the following is to swap the \ and any character after it in the postfix expression
     val swap_escape = result.toString().toCharArray
     var skip = false
-    for(i <- Range(0, swap_escape.length - 1)){
-      if(!skip) {
+    for (i <- Range(0, swap_escape.length - 1)) {
+      if (!skip) {
         if (swap_escape(i) == '\\') {
           swap_escape(i) = swap_escape(i + 1)
           swap_escape(i + 1) = '\\'
           skip = true
         }
-      }else{
+      } else {
         skip = false
       }
     }
@@ -259,7 +264,7 @@ class Pattern(p: String) extends Logger {
 
   // McMaughton-Yamada-Thompson algorithm which transform postfix regex into nfa
   private def postfix_to_nfa(re: String): FiniteAutomaton = {
-    val stack = new mutable.Stack[FiniteAutomaton]()
+    val stack = new m.Stack[FiniteAutomaton]()
     for (i <- Range(0, re.length)) {
       if (i < re.length - 1 && re(i + 1) == '\\') {
         nfa_char(re(i), stack)
@@ -284,7 +289,7 @@ class Pattern(p: String) extends Logger {
 
   // In the following, S is start, E is end, e is epsilon, s_2 is state
   // S---[c]--->E
-  private def nfa_char(c: Char, stack: mutable.Stack[FiniteAutomaton]): Unit = {
+  private def nfa_char(c: Char, stack: m.Stack[FiniteAutomaton]): Unit = {
     val nfa = new FiniteAutomaton
     nfa.start.add_next(c, nfa.end)
     nfa.end.accept = true
@@ -292,7 +297,7 @@ class Pattern(p: String) extends Logger {
   }
 
   // S---[ANY]--->E
-  private def nfa_dot(stack: mutable.Stack[FiniteAutomaton]): Unit = {
+  private def nfa_dot(stack: m.Stack[FiniteAutomaton]): Unit = {
     val nfa = new FiniteAutomaton
     nfa.start.add_next(Pattern.ANY, nfa.end)
     nfa.end.accept = true
@@ -301,7 +306,7 @@ class Pattern(p: String) extends Logger {
 
   // S---e--->nfa1---e---->E
   //  \---e--->nfa2---e-->/
-  private def nfa_or(stack: mutable.Stack[FiniteAutomaton]): Unit = {
+  private def nfa_or(stack: m.Stack[FiniteAutomaton]): Unit = {
     val new_nfa = new FiniteAutomaton
     val nfa1 = stack.pop()
     val nfa2 = stack.pop()
@@ -316,7 +321,7 @@ class Pattern(p: String) extends Logger {
   }
 
   // S--->nfa1---e--->nfa2--->E
-  private def nfa_concat(stack: mutable.Stack[FiniteAutomaton]): Unit = {
+  private def nfa_concat(stack: m.Stack[FiniteAutomaton]): Unit = {
     val new_nfa = new FiniteAutomaton
     val nfa1 = stack.pop()
     val nfa2 = stack.pop()
@@ -329,7 +334,7 @@ class Pattern(p: String) extends Logger {
 
   // S------e------E
   //  \--->nfa--->/
-  private def nfa_question(stack: mutable.Stack[FiniteAutomaton]): Unit = {
+  private def nfa_question(stack: m.Stack[FiniteAutomaton]): Unit = {
     val nfa = stack.pop()
     nfa.start.add_next(Pattern.EPSILON, nfa.end)
     stack.push(nfa)
@@ -338,7 +343,7 @@ class Pattern(p: String) extends Logger {
   //  /<----e-----\
   // S------e----->E
   //  \--->nfa--->/
-  private def nfa_star(stack: mutable.Stack[FiniteAutomaton]): Unit = {
+  private def nfa_star(stack: m.Stack[FiniteAutomaton]): Unit = {
     val nfa = stack.pop()
     nfa.end.add_next(Pattern.EPSILON, nfa.start)
     nfa.start.add_next(Pattern.EPSILON, nfa.end)
@@ -347,7 +352,7 @@ class Pattern(p: String) extends Logger {
 
   //  /<----e-----\
   // S---->nfa---->E
-  private def nfa_plus(stack: mutable.Stack[FiniteAutomaton]): Unit = {
+  private def nfa_plus(stack: m.Stack[FiniteAutomaton]): Unit = {
     val nfa = stack.pop()
     nfa.end.add_next(Pattern.EPSILON, nfa.start)
     stack.push(nfa)
@@ -359,8 +364,8 @@ class Pattern(p: String) extends Logger {
     val dfa = new FiniteAutomaton
 
     // prepare the start state
-    val d_to_n_set = new mutable.HashMap[mutable.HashSet[State], State]()
-    val dfa_start = new mutable.HashSet[State]()
+    val d_to_n_set = new m.HashMap[m.HashSet[State], State]()
+    val dfa_start = new m.HashSet[State]()
     // these nfa states form the start state of the dfa
     dfa_start ++= epsilon_closure(Array(nfa.start))
     dfa_start.add(nfa.start)
@@ -368,12 +373,12 @@ class Pattern(p: String) extends Logger {
     dfa.start = d_to_n_set(dfa_start)
 
     // a BFS-like traverse on the nfa
-    val queue = new mutable.Queue[mutable.HashSet[State]]()
+    val queue = new m.Queue[m.HashSet[State]]()
     queue.enqueue(dfa_start)
     while (queue.nonEmpty) {
       val l = queue.length
       // states that visisted in this loop that need to be added back to the queue
-      val add_queue = new mutable.Queue[mutable.HashSet[State]]()
+      val add_queue = new m.Queue[m.HashSet[State]]()
       for (i <- queue) {
         // if there is any state in the nfa states the dfa state represents is an
         // accepting state, the dfa state is an accepting state
@@ -383,7 +388,7 @@ class Pattern(p: String) extends Logger {
             if (!d_to_n_set(i).to.contains(k) && k != Pattern.EPSILON) {
               val to_set = move(k, i)
               val epsilon_to_set = epsilon_closure(to_set) ++= to_set
-              val hash_epsilon_to_state_set = new mutable.HashSet[State]()
+              val hash_epsilon_to_state_set = new m.HashSet[State]()
               hash_epsilon_to_state_set ++= epsilon_to_set
               if (d_to_n_set.contains(hash_epsilon_to_state_set)) {
                 d_to_n_set(i).add_next(k, d_to_n_set(hash_epsilon_to_state_set))
@@ -403,18 +408,18 @@ class Pattern(p: String) extends Logger {
     dfa
   }
 
-  private def move(via: Char, states: Iterable[State]): mutable.HashSet[State] = {
-    val result = new mutable.HashSet[State]()
+  // subset construction algorithm helper method
+  private def move(via: Char, states: Iterable[State]): m.HashSet[State] = {
+    val result = new m.HashSet[State]()
     states.filter(s => s.to.contains(via)).foreach(ms => result ++= ms.to(via))
     result
   }
 
+  // subset construction algorithm helper method
   private def epsilon_closure(states: Iterable[State]): ArrayBuffer[State] = {
-    val stack = new mutable.Stack[State]()
+    val stack = new m.Stack[State]()
     val result = new ArrayBuffer[State]()
-    for (s <- states) {
-      stack.push(s)
-    }
+    states.foreach(s => stack.push(s))
     while (stack.nonEmpty) {
       val s = stack.pop()
       if (s.to.contains(Pattern.EPSILON)) {
@@ -428,5 +433,4 @@ class Pattern(p: String) extends Logger {
     }
     result
   }
-
 }
