@@ -50,7 +50,7 @@ class Pattern(p: String) extends Logger {
   private val dfa = regex_to_dfa(p)
 
   // print the FA into a dot language string
-  def show(fa: FiniteAutomaton = dfa): String = {
+  def show(fa: FiniteAutomaton = dfa.get): String = {
     val id_map = m.HashMap[State, Int]()
     val queue = new m.Queue[State]()
     queue.enqueue(fa.start)
@@ -103,9 +103,13 @@ class Pattern(p: String) extends Logger {
   }
 
   def search_pattern(t: SuffixTree[Char]): ArrayBuffer[(Int, Int)] = {
-    val start = new m.HashSet[State]()
-    start.add(dfa.start)
-    search_pattern_routine(start, t, t.root, 0, 0)
+    if(dfa.isDefined) {
+      val start = new m.HashSet[State]()
+      start.add(dfa.get.start)
+      search_pattern_routine(start, t, t.root, 0, 0)
+    }else{
+      new ArrayBuffer[(Int, Int)]()
+    }
   }
 
   // recursive search regex pattern on the suffix tree
@@ -198,11 +202,13 @@ class Pattern(p: String) extends Logger {
     result
   }
 
-  def regex_to_dfa(re: String): FiniteAutomaton = {
-    val add_concat = add_explicit_concat(re)
-    val postfix = infix_to_postfix(add_concat)
-    val nfa = postfix_to_nfa(postfix)
-    nfa_to_dfa(nfa)
+  def regex_to_dfa(re: String): Option[FiniteAutomaton] = {
+    if (re.length() >= 1) {
+      val add_concat = add_explicit_concat(re)
+      val postfix = infix_to_postfix(add_concat)
+      val nfa = postfix_to_nfa(postfix)
+      Some(nfa_to_dfa(nfa))
+    } else None
   }
 
   private def add_explicit_concat(re: String): String = {
