@@ -173,7 +173,12 @@ class SuffixTree[T] extends Logger {
             sb.append(label.mkString).append("\"];\n")
           } else {
             sb.append(label.mkString).append("@" + e._2.to.search_index_).append("\"];\n")
+            val ln = e._2.to
+            sb.append(id_map(ln)).append(" -> ").append(id_map(ln.from_edge.get.from)).append(" ;\n")
           }
+        }
+        if(n.from_edge.isDefined){
+          sb.append(id_map(n)).append(" -> ").append(id_map(n.from_edge.get.from)).append(" ;\n")
         }
       }
       debug("Queue: " + queue.map((t: Node[T]) => id_map(t)).mkString(", "))
@@ -269,9 +274,11 @@ class SuffixTree[T] extends Logger {
   private def node_insert(node: Node[T], edge_head: T, label_start: Int, search_index: Int): Unit = {
     // create a new terminating edge
     val new_terminal_node = new Node[T](Node.LEAF_NODE, window_head + search_index)
-    val new_edge = new Edge[T](label_start, SuffixTree.SEQ_END, new_terminal_node)
+    val new_edge = new Edge[T](label_start, SuffixTree.SEQ_END, node, new_terminal_node)
     // add the new edge to active node
     node.edges(edge_head) = new_edge
+    // link back to parent
+    new_terminal_node.from_edge = Some(new_edge)
     // add the terminal node to leaf reference
     leaves(remainder_index) = Some(new_terminal_node)
   }
@@ -282,15 +289,17 @@ class SuffixTree[T] extends Logger {
     // ----old_edge----O:old_edge.to
     //      ||
     //      V
-    // ---old_edge--- O:new_node ----new_edge---- O ap_edge.to
+    // ---old_edge--- O:new_node ----new_edge---- O old_edge.to
     //                 \---new_terminal_edge----- O new terminal node
     // while the new terminal_edge and node are inserted by node_insert
     val old_edge = node.edges(edge_head)
-    val new_edge = new Edge[T](old_edge.label.start + split_point + 1, old_edge.label.end, old_edge.to)
     val new_node = new Node[T](Node.INTERNAL_NODE)
+    val new_edge = new Edge[T](old_edge.label.start + split_point + 1, old_edge.label.end, new_node, old_edge.to)
+    old_edge.to.from_edge = Some(new_edge)
 
     old_edge.label = new Label(old_edge.label.start, old_edge.label.start + split_point)
     old_edge.to = new_node
+    new_node.from_edge = Some(old_edge)
     debug("\t\t" + new_edge.label.toString)
     new_node.add_edge(sequence, new_edge)
 

@@ -4,10 +4,11 @@ import scala.collection.mutable.ArrayBuffer
 
 case class Label(start: Int, end: Int)
 
-class Edge[T](start: Int, end: Int, to_node: Node[T]) {
+class Edge[T](start: Int, end: Int, from_node: Node[T], to_node: Node[T]) {
   // includes end
   var label = new Label(start, end)
   var to = to_node
+  var from = from_node
 
   // ALTERNATE: refactor this method to eliminate the parameter
   def length(seq_length: Int): Int = {
