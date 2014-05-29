@@ -14,6 +14,7 @@ class SuffixTree[T] extends Logger {
   log_level = Logger.ERROR
   val sequence = new ArrayBuffer[T]
   val leaves = new ArrayBuffer[Option[Node[T]]]
+  var window_head = 0: BigInt
 
   val root = new Node[T](0)
   var ap = new ActivePoint[T](root, None, 0)
@@ -92,8 +93,8 @@ class SuffixTree[T] extends Logger {
     result
   }
 
-  def search(s: Iterable[T]): ArrayBuffer[Int] = {
-    val result = new ArrayBuffer[Int]()
+  def search(s: Iterable[T]): ArrayBuffer[BigInt] = {
+    val result = new ArrayBuffer[BigInt]()
     val matching_point = new ActivePoint[T](root, None, 0)
     for (i <- s) {
       matching_point.edge_head match {
@@ -267,7 +268,7 @@ class SuffixTree[T] extends Logger {
 
   private def node_insert(node: Node[T], edge_head: T, label_start: Int, search_index: Int): Unit = {
     // create a new terminating edge
-    val new_terminal_node = new Node[T](Node.LEAF_NODE, search_index)
+    val new_terminal_node = new Node[T](Node.LEAF_NODE, window_head + search_index)
     val new_edge = new Edge[T](label_start, SuffixTree.SEQ_END, new_terminal_node)
     // add the new edge to active node
     node.edges(edge_head) = new_edge

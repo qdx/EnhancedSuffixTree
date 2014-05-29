@@ -28,6 +28,6 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
     stree.log_level = Logger.ERROR
     stree.batch_input(s)
     stree.insert('#')
-    stree.leaves.zipWithIndex.forall(i => i._1.isEmpty || i._1.get.search_index_ == i._2)
+    stree.leaves.zipWithIndex.forall(i => i._1.isEmpty || i._1.get.search_index_ == i._2 + stree.window_head)
   }
 }

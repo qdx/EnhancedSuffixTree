@@ -102,13 +102,13 @@ class Pattern(p: String) extends Logger {
     sb.toString()
   }
 
-  def search_pattern(t: SuffixTree[Char]): ArrayBuffer[(Int, Int)] = {
+  def search_pattern(t: SuffixTree[Char]): ArrayBuffer[(BigInt, Int)] = {
     if(dfa.isDefined) {
       val start = new m.HashSet[State]()
       start.add(dfa.get.start)
       search_pattern_routine(start, t, t.root, 0, 0)
     }else{
-      new ArrayBuffer[(Int, Int)]()
+      new ArrayBuffer[(BigInt, Int)]()
     }
   }
 
@@ -117,8 +117,8 @@ class Pattern(p: String) extends Logger {
                                      t: SuffixTree[Char],
                                      n: Node[Char],
                                      l: Int,
-                                     previous_accept_length: Int): ArrayBuffer[(Int, Int)] = {
-    val result = new ArrayBuffer[(Int, Int)]()
+                                     previous_accept_length: Int): ArrayBuffer[(BigInt, Int)] = {
+    val result = new ArrayBuffer[(BigInt, Int)]()
     if (n.type_ == Node.LEAF_NODE) {
       result.append((n.search_index_, l))
     } else {

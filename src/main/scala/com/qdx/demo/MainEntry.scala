@@ -124,12 +124,12 @@ object MainEntry extends App {
       // scala regex search
       val scala_regex = new Regex(t)
       val sr_match = scala_regex findAllMatchIn target
-      val sr_set = new m.HashSet[(Int, Int)]()
+      val sr_set = new m.HashSet[(BigInt, Int)]()
       sr_match.foreach(m => sr_set.add((m.start, m.end - m.start)))
 
       // suffix regex search
       val my_regex = new Pattern(t)
-      val my_set = new m.HashSet[(Int, Int)]()
+      val my_set = new m.HashSet[(BigInt, Int)]()
       val my_result = my_regex.search_pattern(search_suffix_tree)
       my_result.foreach(m => my_set.add(m))
 

@@ -9,7 +9,7 @@ object Node {
   val INTERNAL_NODE = 2
 }
 
-class Node[T](node_type: Int = 2, search_index: Int = -1) {
+class Node[T](node_type: Int = 2, search_index: BigInt = -1) {
   val edges = m.HashMap[T, Edge[T]]()
   var type_ = node_type
   var suffix_link = None : Option[Node[T]]
