@@ -1,7 +1,7 @@
 package com.qdx.suffixtree
 
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 import com.qdx.logging.Logger
 
 object SuffixTree {
@@ -69,12 +69,12 @@ class SuffixTree[T] extends Logger {
 
   // standard BFS traverse of the tree that returns a list of the nodes
   def breadth_first_traverse(root_node: Node[T] = root): ArrayBuffer[Node[T]] = {
-    val result = new mutable.ArrayBuffer[Node[T]]()
-    val queue = new mutable.Queue[Node[T]]()
+    val result = new m.ArrayBuffer[Node[T]]()
+    val queue = new m.Queue[Node[T]]()
     queue.enqueue(root_node)
     while (queue.length > 0) {
       val s = queue.length
-      val add_queue = new mutable.Queue[Node[T]]()
+      val add_queue = new m.Queue[Node[T]]()
       for (n <- queue) {
         result.append(n)
         if (n.type_ != Node.LEAF_NODE)
@@ -133,11 +133,11 @@ class SuffixTree[T] extends Logger {
 
   def show(): String = {
     // used to do bfs
-    val queue = new mutable.Queue[Node[T]]()
+    val queue = new m.Queue[Node[T]]()
     queue.enqueue(root)
 
     // assign id to each node
-    val id_map = new mutable.HashMap[Node[T], Int]()
+    val id_map = new m.HashMap[Node[T], Int]()
     id_map(root) = 0
 
     // dispatch node id
@@ -150,7 +150,7 @@ class SuffixTree[T] extends Logger {
     while (queue.length > 0) {
       val s = queue.length
       // temporary queue used to hold children nodes
-      val add_queue = new mutable.Queue[Node[T]]()
+      val add_queue = new m.Queue[Node[T]]()
 
       for (n <- queue) {
         debug("node " + id_map(n) + " has " + n.edges.size + " children")

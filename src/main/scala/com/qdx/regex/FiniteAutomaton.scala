@@ -1,12 +1,12 @@
 package com.qdx.regex
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 import scala.collection.mutable.ArrayBuffer
 
 class State {
   var accept = false
   // ALTERNATE: change the value of hashmap into singleton instead of collection for dfa
-  val to = new mutable.HashMap[Char, ArrayBuffer[State]]()
+  val to = new m.HashMap[Char, ArrayBuffer[State]]()
 
   def add_next(c: Char, s: State): Unit = {
     if (!to.contains(c)) {

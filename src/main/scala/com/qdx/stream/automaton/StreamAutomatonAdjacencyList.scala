@@ -1,6 +1,6 @@
 package com.qdx.stream.automaton
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 
 object StreamAutomatonAdjacencyList{
 }
@@ -12,30 +12,30 @@ class StreamAutomatonAdjacencyList extends StreamAutomaton {
   var earliest_state = 0
   var stream_count = 0
   //                                 [state, queue((seq_num, state))]
-  var automaton = new mutable.HashMap[Int, mutable.Queue[(Int, State)]]()
-  automaton(0) = new mutable.Queue[(Int, State)]()
+  var automaton = new m.HashMap[Int, m.Queue[(Int, State)]]()
+  automaton(0) = new m.Queue[(Int, State)]()
 
   // transfer : (target state: Int, time stamp: Int)
   def input(transfer: State): Unit = {
     if (!automaton.contains(transfer.state)) {
-      automaton(transfer.state) = new mutable.Queue[(Int, State)]()
+      automaton(transfer.state) = new m.Queue[(Int, State)]()
     }
     automaton(current_state).enqueue((stream_count, transfer))
     current_state = transfer.state
     stream_count += 1
   }
 
-  def find_state(state: Int): mutable.Queue[(Int, State)] = {
-    var result = new mutable.Queue[(Int, State)]
+  def find_state(state: Int): m.Queue[(Int, State)] = {
+    var result = new m.Queue[(Int, State)]
     result ++= automaton(state)
   }
 
-  def find_paths(state_src: Int, state_dst: Int, length: Int = -1): mutable.Queue[(Int, Int)] = {
+  def find_paths(state_src: Int, state_dst: Int, length: Int = -1): m.Queue[(Int, Int)] = {
     var src_i = 0
     var dst_i = 0
     val src_out_degree = automaton(state_src).length
     val dst_out_degree = automaton(state_dst).length
-    val result = new mutable.Queue[(Int, Int)]
+    val result = new m.Queue[(Int, Int)]
     while (src_i < src_out_degree && dst_i < dst_out_degree) {
       val seq_src = automaton(state_src)(src_i)._1
       val seq_dst = automaton(state_dst)(dst_i)._1
@@ -85,7 +85,7 @@ class StreamAutomatonAdjacencyList extends StreamAutomaton {
   }
 
   // return the index of the key, or the index of the smallest element that is greater than key
-  def binary_find(k: Int, q: mutable.Queue[(Int, State)]): Int = {
+  def binary_find(k: Int, q: m.Queue[(Int, State)]): Int = {
     var order = true
     for (i <- Range(0, q.length - 1)) {
       order = order && (q(i)._1 < q(i + 1)._1)
@@ -95,7 +95,7 @@ class StreamAutomatonAdjacencyList extends StreamAutomaton {
     binary_find_routine(k, q, 0, q.length - 1)
   }
 
-  def binary_find_routine(k: Int, q: mutable.Queue[(Int, State)], left: Int, right: Int): Int = {
+  def binary_find_routine(k: Int, q: m.Queue[(Int, State)], left: Int, right: Int): Int = {
     if (left > right) {
       return -1
     }

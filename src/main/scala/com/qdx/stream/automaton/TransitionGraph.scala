@@ -1,6 +1,6 @@
 package com.qdx.stream.automaton
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 
 object TransitionGraph {
 
@@ -10,21 +10,21 @@ object TransitionGraph {
 
 class TransitionGraph {
 
-  val graph = new mutable.HashMap[Int, mutable.HashMap[Int, Int]]()
-  val edge_weight = new mutable.HashMap[Int, mutable.HashMap[Int, Int]]()
-  val path_record = new mutable.HashMap[Int, mutable.HashMap[Int, mutable.ArrayBuffer[Int]]]()
-  val vertex_degree = new mutable.HashMap[Int, Int]()
+  val graph = new m.HashMap[Int, m.HashMap[Int, Int]]()
+  val edge_weight = new m.HashMap[Int, m.HashMap[Int, Int]]()
+  val path_record = new m.HashMap[Int, m.HashMap[Int, m.ArrayBuffer[Int]]]()
+  val vertex_degree = new m.HashMap[Int, Int]()
 
   var current_state = -1
 
   def input(next_state: Int): Unit = {
     if (current_state == -1) current_state = next_state
     else {
-      val row_update_queue = new mutable.Queue[TransitionGraph.OneTransition]()
+      val row_update_queue = new m.Queue[TransitionGraph.OneTransition]()
       row_update_queue.enqueue(TransitionGraph.OneTransition(current_state, next_state))
 
       if (!graph.contains(current_state)) {
-        graph(current_state) = new mutable.HashMap[Int, Int]()
+        graph(current_state) = new m.HashMap[Int, Int]()
       }
 
       // update weight
@@ -33,7 +33,7 @@ class TransitionGraph {
         else vertex_degree(current_state) += 1
       }
       if (!edge_weight.contains(current_state)) {
-        edge_weight(current_state) = new mutable.HashMap[Int, Int]()
+        edge_weight(current_state) = new m.HashMap[Int, Int]()
       }
       if (!edge_weight(current_state).contains(next_state)) edge_weight(current_state)(next_state) = 1
       else edge_weight(current_state)(next_state) += 1
@@ -110,7 +110,7 @@ class TransitionGraph {
 
   private def safe_weight_lookup(from: Int, to: Int): Double = safe_lookup(from, to, edge_weight)
 
-  private def safe_lookup(i_1: Int, i_2: Int, data: mutable.HashMap[Int, mutable.HashMap[Int, Int]]): Double = {
+  private def safe_lookup(i_1: Int, i_2: Int, data: m.HashMap[Int, m.HashMap[Int, Int]]): Double = {
     if (!data.contains(i_1)) scala.Double.PositiveInfinity
     else if (!data(i_1).contains(i_2)) scala.Double.PositiveInfinity
     else data(i_1)(i_2)
@@ -118,9 +118,9 @@ class TransitionGraph {
 
   private def path_record_append(from: Int, to: Int, length: Int): Unit = {
     if (!path_record.contains(from))
-      path_record(from) = new mutable.HashMap[Int, mutable.ArrayBuffer[Int]]()
+      path_record(from) = new m.HashMap[Int, m.ArrayBuffer[Int]]()
     if (!path_record(from).contains(to))
-      path_record(from)(to) = new mutable.ArrayBuffer[Int]()
+      path_record(from)(to) = new m.ArrayBuffer[Int]()
     path_record(from)(to).append(length)
   }
 

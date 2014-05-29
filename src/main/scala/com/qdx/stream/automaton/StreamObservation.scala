@@ -1,6 +1,6 @@
 package com.qdx.stream.automaton
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 import scala.collection.mutable.ArrayBuffer
 
 object StreamObservation {
@@ -18,10 +18,10 @@ class StreamObservation(window_size: Int, index_interval: Int) {
   var observation_head = new StreamObservation.OneObservation(-1, -1)
 
   //HashMap[state, HashMap[seq_num, state]]
-  val observation = new mutable.HashMap[Int, mutable.HashMap[BigInt, Int]]()
+  val observation = new m.HashMap[Int, m.HashMap[BigInt, Int]]()
 
   //HashMap[seq_num, state]
-  val time_index = new mutable.HashMap[BigInt, Int]()
+  val time_index = new m.HashMap[BigInt, Int]()
 
   def input(ob: StreamObservation.OneObservation): Unit = {
     if (current_state == -1) current_state = ob.state
@@ -32,7 +32,7 @@ class StreamObservation(window_size: Int, index_interval: Int) {
       }
       // store new state
       if (!observation.contains(current_state)) {
-        observation(current_state) = new mutable.HashMap[BigInt, Int]()
+        observation(current_state) = new m.HashMap[BigInt, Int]()
       }
       observation(current_state)(ob.seq_num) = ob.state
 

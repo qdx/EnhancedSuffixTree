@@ -1,6 +1,6 @@
 package com.qdx.demo
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 import scala.util.Random
 import com.qdx.suffixtree.{SuffixTreeActor, SuffixTree, Node}
 import com.qdx.logging.Logger
@@ -19,12 +19,12 @@ object MainEntry extends App {
   //  exact_path_search_test()
   //  special_suffix_tree_tests()
   //  manual_test_suffix_tree("abcabxabcd", '#')
-  //  regex_search_test()
+    regex_search_test()
 
 //  concurrent_demo()
-  val tree = new SuffixTree[Char]
-  tree.batch_input("dedododeeodo")
-  println(tree.show())
+//  val tree = new SuffixTree[Char]
+//  tree.batch_input("dedododeeodo")
+//  println(tree.show())
 
   def concurrent_demo(): Unit = {
     val system = ActorSystem("SuffixTree")
@@ -124,12 +124,12 @@ object MainEntry extends App {
       // scala regex search
       val scala_regex = new Regex(t)
       val sr_match = scala_regex findAllMatchIn target
-      val sr_set = new mutable.HashSet[(Int, Int)]()
+      val sr_set = new m.HashSet[(Int, Int)]()
       sr_match.foreach(m => sr_set.add((m.start, m.end - m.start)))
 
       // suffix regex search
       val my_regex = new Pattern(t)
-      val my_set = new mutable.HashSet[(Int, Int)]()
+      val my_set = new m.HashSet[(Int, Int)]()
       val my_result = my_regex.search_pattern(search_suffix_tree)
       my_result.foreach(m => my_set.add(m))
 

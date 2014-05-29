@@ -1,6 +1,6 @@
 package com.qdx.stream.automaton
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 
 class StreamAutomatonAdjacencyHash extends StreamAutomaton{
 
@@ -9,17 +9,17 @@ class StreamAutomatonAdjacencyHash extends StreamAutomaton{
   var stream_count = 0
 
   //                                  [state, hash(seq_num, state)]
-  var automaton = new mutable.HashMap[Int, mutable.HashMap[Int, State]]()
-  automaton(0) = new mutable.HashMap[Int, State]()
+  var automaton = new m.HashMap[Int, m.HashMap[Int, State]]()
+  automaton(0) = new m.HashMap[Int, State]()
 
   def input(transfer: State): Unit = {
 
 
   }
 
-  def find_state(state: Int): mutable.Queue[(Int, State)] = {
+  def find_state(state: Int): m.Queue[(Int, State)] = {
 
-    new mutable.Queue[(Int, State)]()
+    new m.Queue[(Int, State)]()
   }
 
   def show(): Unit = {

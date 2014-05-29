@@ -1,6 +1,6 @@
 package com.qdx.stream.automaton
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 
 case class State(state:Int, time: Long)
 
@@ -12,7 +12,7 @@ trait StreamAutomaton {
 
   def input(transfer: State): Unit
 
-  def find_state(state: Int): mutable.Queue[(Int, State)]
+  def find_state(state: Int): m.Queue[(Int, State)]
 
   def show(): Unit
 

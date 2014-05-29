@@ -1,6 +1,6 @@
 package com.qdx.suffixtree
 
-import scala.collection.mutable
+import scala.collection.{mutable => m}
 import scala.collection.mutable.ArrayBuffer
 
 object Node {
@@ -10,7 +10,7 @@ object Node {
 }
 
 class Node[T](node_type: Int = 2, search_index: Int = -1) {
-  val edges = mutable.HashMap[T, Edge[T]]()
+  val edges = m.HashMap[T, Edge[T]]()
   var type_ = node_type
   var suffix_link = None : Option[Node[T]]
   var search_index_ = search_index
