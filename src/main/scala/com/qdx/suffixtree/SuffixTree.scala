@@ -12,7 +12,8 @@ object SuffixTree {
 // http://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english
 class SuffixTree[T] extends Logger {
   log_level = Logger.ERROR
-  val sequence = new ArrayBuffer[T]()
+  val sequence = new ArrayBuffer[T]
+  val leaves = new ArrayBuffer[Option[Node[T]]]
 
   val root = new Node[T](0)
   var ap = new ActivePoint[T](root, None, 0)
@@ -24,6 +25,7 @@ class SuffixTree[T] extends Logger {
 
   def insert(i: T): Unit = {
     sequence.append(i)
+    leaves.append(None)
 
     var loop_flag = true
     var inserting = false
@@ -53,7 +55,6 @@ class SuffixTree[T] extends Logger {
         debug(get_status_string())
         inserting = true
         val new_node = insert_suffix(remainder_index, i)
-        loop_flag = remainder_index < sequence.length - 1
         debug("\t\t\t remainder:" + remainder_index + " seq:" + sequence.length)
         debug("\t\t\t defined:" + previous_inserted_node.isDefined)
         debug("\t\t\t ap node:" + get_active_point_string())
@@ -61,6 +62,7 @@ class SuffixTree[T] extends Logger {
         debug("\t\t\t previous node defined: " + previous_inserted_node.isDefined)
         establish_suffix_link(inserting, match_result, new_node)
         move_active_point_after_split()
+        loop_flag = remainder_index < sequence.length - 1
         remainder_index += 1
       }
       debug(get_active_point_string())
@@ -269,6 +271,8 @@ class SuffixTree[T] extends Logger {
     val new_edge = new Edge[T](label_start, SuffixTree.SEQ_END, new_terminal_node)
     // add the new edge to active node
     node.edges(edge_head) = new_edge
+    // add the terminal node to leaf reference
+    leaves(remainder_index) = Some(new_terminal_node)
   }
 
   private def edge_insert(node: Node[T], edge_head: T, split_point: Int, input: T, label_start: Int, search_index: Int): Node[T] = {

@@ -20,6 +20,14 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
     for(n <- stree.breadth_first_traverse())
       if(n.type_ == Node.LEAF_NODE)
         leaf_counter += 1
-    leaf_counter == s.length + 1
+    leaf_counter == s.length + 1 && leaf_counter == stree.remainder_index
+  }
+
+  property("leaveReferences") = forAll(aTozString){ s: String =>
+    val stree = new SuffixTree[Char]
+    stree.log_level = Logger.ERROR
+    stree.batch_input(s)
+    stree.insert('#')
+    stree.leaves.zipWithIndex.forall(i => i._1.isEmpty || i._1.get.search_index_ == i._2)
   }
 }
