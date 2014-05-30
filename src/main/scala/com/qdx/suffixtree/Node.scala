@@ -26,4 +26,9 @@ class Node[T](node_type: Int = 2, search_index: BigInt = -1) {
   def add_edge(seq: ArrayBuffer[T], edge: Edge[T]): Unit = {
     edges(seq(edge.label.start)) = edge
   }
+
+  def get_parent_node(): Option[Node[T]] = {
+    if(from_edge.isDefined) Some(from_edge.get.from)
+    else None
+  }
 }

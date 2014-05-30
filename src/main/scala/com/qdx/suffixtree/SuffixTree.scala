@@ -18,7 +18,7 @@ class SuffixTree[T] extends Logger {
 
   val root = new Node[T](0)
   var ap = new ActivePoint[T](root, None, 0)
-  var remainder_index = 0
+  var remainder_index = 0: BigInt
 
   var previous_inserted_node = None: Option[Node[T]]
 
@@ -177,7 +177,7 @@ class SuffixTree[T] extends Logger {
             sb.append(id_map(ln)).append(" -> ").append(id_map(ln.from_edge.get.from)).append(" ;\n")
           }
         }
-        if(n.from_edge.isDefined){
+        if (n.from_edge.isDefined) {
           sb.append(id_map(n)).append(" -> ").append(id_map(n.from_edge.get.from)).append(" ;\n")
         }
       }
@@ -198,6 +198,28 @@ class SuffixTree[T] extends Logger {
     debug("Active Point(" + id_map(ap.node) + ", " + ap.edge_head + ", " + ap.length + ")")
     debug(sequence.mkString)
     sb.toString()
+  }
+
+  def move_window_head(): Unit = {
+    var head_item = sequence.head
+    var head_leaf = leaves.head
+    var head_leaf_parent = head_leaf.get.get_parent_node()
+    var suffix_insert_indicator = false
+    var n = head_leaf.get
+    while(n.edges.size == 0){
+      if(!suffix_insert_indicator){
+        if(ap.edge_head.isDefined){
+          if(ap.get_edge().get.equals(n.from_edge)){
+            //TODO: start from here
+
+          }
+        }else{
+
+        }
+      }
+    }
+
+
   }
 
   private def establish_suffix_link(inserting: Boolean, match_result: Boolean, new_node: Option[Node[T]]): Unit = {
@@ -256,7 +278,7 @@ class SuffixTree[T] extends Logger {
 
   // search index is the index we insert at leaf node, marking where the suffix gained by
   // concatenating from root to the this leaf starts at
-  private def insert_suffix(search_index: Int, input: T): Option[Node[T]] = {
+  private def insert_suffix(search_index: BigInt, input: T): Option[Node[T]] = {
     var new_node = None: Option[Node[T]]
     ap.edge_head match {
       case Some(head) =>
@@ -271,7 +293,7 @@ class SuffixTree[T] extends Logger {
     new_node
   }
 
-  private def node_insert(node: Node[T], edge_head: T, label_start: Int, search_index: Int): Unit = {
+  private def node_insert(node: Node[T], edge_head: T, label_start: Int, search_index: BigInt): Unit = {
     // create a new terminating edge
     val new_terminal_node = new Node[T](Node.LEAF_NODE, window_head + search_index)
     val new_edge = new Edge[T](label_start, SuffixTree.SEQ_END, node, new_terminal_node)
@@ -280,10 +302,10 @@ class SuffixTree[T] extends Logger {
     // link back to parent
     new_terminal_node.from_edge = Some(new_edge)
     // add the terminal node to leaf reference
-    leaves(remainder_index) = Some(new_terminal_node)
+    leaves((remainder_index - window_head).toInt) = Some(new_terminal_node)
   }
 
-  private def edge_insert(node: Node[T], edge_head: T, split_point: Int, input: T, label_start: Int, search_index: Int): Node[T] = {
+  private def edge_insert(node: Node[T], edge_head: T, split_point: Int, input: T, label_start: Int, search_index: BigInt): Node[T] = {
     // ----<name>---- stands for edges, O:<name> stands for node, then the following block of code
     // can be explained as:
     // ----old_edge----O:old_edge.to
@@ -322,7 +344,7 @@ class SuffixTree[T] extends Logger {
         case Some(head) =>
           ap.length -= 1
           if (ap.length == 0) ap.edge_head = None
-          else ap.edge_head = Some(sequence(remainder_index + 1))
+          else ap.edge_head = Some(sequence((remainder_index - window_head + 1).toInt))
         case None => Unit
       }
     } else {

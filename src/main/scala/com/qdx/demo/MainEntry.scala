@@ -19,9 +19,9 @@ object MainEntry extends App {
   //  exact_path_search_test()
   //  special_suffix_tree_tests()
   //  manual_test_suffix_tree("abcabxabcd", '#')
-    regex_search_test()
+//    regex_search_test()
 
-//  concurrent_demo()
+  concurrent_demo()
 //  val tree = new SuffixTree[Char]
 //  tree.batch_input("dedododeeodo")
 //  println(tree.show())
