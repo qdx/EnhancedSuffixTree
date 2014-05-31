@@ -5,8 +5,10 @@ import scala.collection.{mutable => m}
 import com.qdx.logging.Logger
 
 object SuffixTree {
-  val SEQ_END = -1
+  val SEQ_END = BigInt(-1)
 }
+
+class InternalNodeNumOfChildrenException extends Exception {}
 
 // Implementing suffix tree using Ukkonen's algorithm, great help from:
 // http://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english
@@ -49,7 +51,7 @@ class SuffixTree[T] extends Logger {
           debug("\t\t\t is the same:" + ap.node.equals(previous_inserted_node.get))
         establish_suffix_link(inserting, match_result, None)
         loop_flag = false
-        walk_down_ap(ap.node.edges(ap.edge_head.get).label.start)
+        walk_down_ap((ap.node.edges(ap.edge_head.get).label.start - window_head).toInt)
       } else {
         // when match failed, insert the suffixes from remainder_index till the end
         debug("match failed: " + i.toString)
@@ -93,6 +95,7 @@ class SuffixTree[T] extends Logger {
     result
   }
 
+  // this method is deprecated, it searches for exact string in the suffix tree
   def search(s: Iterable[T]): ArrayBuffer[BigInt] = {
     val result = new ArrayBuffer[BigInt]()
     val matching_point = new ActivePoint[T](root, None, 0)
@@ -100,7 +103,7 @@ class SuffixTree[T] extends Logger {
       matching_point.edge_head match {
         case Some(head) =>
           val mp_edge = matching_point.node.edges(head)
-          if (!i.equals(sequence(mp_edge.label.start + matching_point.length))) {
+          if (!i.equals(sequence((mp_edge.label.start - window_head).toInt + matching_point.length))) {
             return result
           }
         case None =>
@@ -111,7 +114,7 @@ class SuffixTree[T] extends Logger {
       matching_point.edge_head = matching_point.edge_head.orElse(Some(i))
       val mp_edge = matching_point.node.edges(matching_point.edge_head.get)
       matching_point.length += 1
-      if (matching_point.length == mp_edge.length(sequence.length)) {
+      if (matching_point.length == mp_edge.length(sequence.length, window_head)) {
         matching_point.node = mp_edge.to
         matching_point.edge_head = None
         matching_point.length = 0
@@ -134,7 +137,7 @@ class SuffixTree[T] extends Logger {
     "Active Point(" + ap.node.type_ + ", " + ap.edge_head + ", " + ap.length + ")"
   }
 
-  def show(): String = {
+  def show(back_link: Boolean = false): String = {
     // used to do bfs
     val queue = new m.Queue[Node[T]]()
     queue.enqueue(root)
@@ -166,18 +169,25 @@ class SuffixTree[T] extends Logger {
           }
           sb.append(id_map(n)).append(" -> ").append(id_map(e._2.to)).append(" [label=\"")
           // getting the label of edge
-          val end = if (e._2.label.end == -1) sequence.length - 1 else e._2.label.end
-          val label = sequence.slice(e._2.label.start, end + 1)
+
+          // TODO: fix the label
+          val end =
+            if (e._2.label.end == SuffixTree.SEQ_END) sequence.length - 1
+            else (e._2.label.end - window_head).toInt
+          val label = e._2.get_label_seq(sequence, window_head)
+
           if (e._2.to.type_ != Node.LEAF_NODE) {
             add_queue.enqueue(e._2.to)
             sb.append(label.mkString).append("\"];\n")
           } else {
-            sb.append(label.mkString).append("@" + e._2.to.search_index_).append("\"];\n")
-            val ln = e._2.to
-            sb.append(id_map(ln)).append(" -> ").append(id_map(ln.from_edge.get.from)).append(" ;\n")
+            sb.append(label.mkString).append("@" + (e._2.to.search_index_ - window_head)).append("\"];\n")
+            if (back_link) {
+              val ln = e._2.to
+              sb.append(id_map(ln)).append(" -> ").append(id_map(ln.from_edge.get.from)).append(" ;\n")
+            }
           }
         }
-        if (n.from_edge.isDefined) {
+        if (n.from_edge.isDefined && back_link) {
           sb.append(id_map(n)).append(" -> ").append(id_map(n.from_edge.get.from)).append(" ;\n")
         }
       }
@@ -201,25 +211,58 @@ class SuffixTree[T] extends Logger {
   }
 
   def move_window_head(): Unit = {
-    var head_item = sequence.head
-    var head_leaf = leaves.head
-    var head_leaf_parent = head_leaf.get.get_parent_node()
-    var suffix_insert_indicator = false
-    var n = head_leaf.get
-    while(n.edges.size == 0){
-      if(!suffix_insert_indicator){
-        if(ap.edge_head.isDefined){
-          if(ap.get_edge().get.equals(n.from_edge)){
-            //TODO: start from here
+    // find the leaf node that represents the suffix we are deleting
+    val n = leaves.head.get
+    // find the parent of that leaf node
+    val np = n.get_parent_node().get
+    // the edge from np to n
+    val e = n.from_edge.get
 
-          }
-        }else{
+    if (ap.node.equals(np) && ap.edge_head.isDefined && ap.get_edge().equals(n.from_edge)) {
+      // when ap is on the edge that is leading to the leaf node we are looking at, we need to
+      // insert the suffix indicated by remainder index
+      e.label = new Label((remainder_index + (e.label.start - (n.search_index_ - window_head))).toInt, e.label.end)
+      n.search_index_ = remainder_index + window_head
+      move_active_point_after_split()
+    } else {
+      // we don't need to insert any suffix, but we do need to remove the leaf we are looking at
+      if (np.edges.size == 2 && np.type_ != Node.ROOT) {
 
+        // get the other node
+        val other_edge_head = (np.edges.keySet - sequence((n.from_edge.get.label.start - window_head).toInt)).head
+        val o = np.edges(other_edge_head).to
+        val npp = np.get_parent_node().get
+        // in this case we need to merge edges
+        // to make it clearer, here is a graph:
+        // -------> npp --------------------------------> np --------> n
+        //           \ we don't care about this subtree    \---------> o (we don't care about this subtree)
+        // after the operation, we want it to look like
+        // -------> npp -------------> o (we don't care)
+        //           \ we don't care
+        if (ap.node.equals(np)) {
+          // when ap is in the subtree we are manipulating, we have to move ap to the correct position
+          ap.node = npp
+          ap.edge_head = Some(sequence((np.from_edge.get.label.start - window_head).toInt))
+          ap.length = np.from_edge.get.length(sequence.length, window_head) + ap.length
         }
+        // merging edges
+        np.from_edge.get.label = new Label(np.from_edge.get.label.start, o.from_edge.get.label.end)
+        np.from_edge.get.to = o
+        o.from_edge = np.from_edge
+      } else if (np.edges.size >= 2 || np.type_ == Node.ROOT) {
+        // in this case, we just need to remove the leaf and it's from edge
+        np.edges.remove(sequence((n.from_edge.get.label.start - window_head).toInt))
+      } else {
+        // any internal node should have at least 2 edges, in this branch this is violated
+        throw new InternalNodeNumOfChildrenException
       }
+      // since we have slided the sequence backwards, in order to keep remainder index at the right place,
+      // we need to slide it backwards too.
+      remainder_index -= 1
     }
-
-
+    sequence.remove(0)
+    leaves.remove(0)
+    window_head += 1
   }
 
   private def establish_suffix_link(inserting: Boolean, match_result: Boolean, new_node: Option[Node[T]]): Unit = {
@@ -323,7 +366,7 @@ class SuffixTree[T] extends Logger {
     old_edge.to = new_node
     new_node.from_edge = Some(old_edge)
     debug("\t\t" + new_edge.label.toString)
-    new_node.add_edge(sequence, new_edge)
+    new_node.add_edge(sequence, window_head, new_edge)
 
     node_insert(new_node, input, label_start, search_index)
     new_node
@@ -337,6 +380,7 @@ class SuffixTree[T] extends Logger {
     }
     // when walking down new ap, if the previous ap is root, we start matching
     // items one item later than the case where previous ap is not root
+    // TODO: I really forgot why I need this offset here
     val offset = if (ap.node.type_ == Node.ROOT) 1 else 0
     if (ap.node.type_ == Node.ROOT) {
       // if we are at root, decrease ap length, move edge_head toward
@@ -359,8 +403,8 @@ class SuffixTree[T] extends Logger {
     // walk down ap if ap length is greater than current active edge length
     if (old_label.isDefined
       && ap.edge_head.isDefined
-      && ap.length >= ap.node.edges(ap.edge_head.get).length(sequence.length))
-      walk_down_ap(old_label.get.start + offset)
+      && ap.length >= ap.node.edges(ap.edge_head.get).length(sequence.length, window_head))
+      walk_down_ap((old_label.get.start + offset - window_head).toInt)
     debug(get_active_point_string())
   }
 
@@ -372,7 +416,7 @@ class SuffixTree[T] extends Logger {
         info("edge_head defined")
         var cursor = 0
         var ap_edge = ap.node.edges(head)
-        var ap_edge_len = ap_edge.length(sequence.length)
+        var ap_edge_len = ap_edge.length(sequence.length, window_head)
         info(get_active_point_string())
         info("ap edge label:" + ap_edge.label)
         info("ap length:" + ap.length + " ap edge length:" + ap_edge_len)
@@ -387,7 +431,7 @@ class SuffixTree[T] extends Logger {
             info("in while loop, next edge head is:" + next_edge_head)
             ap.edge_head = Some(next_edge_head)
             ap_edge = ap.node.edges(next_edge_head)
-            ap_edge_len = ap_edge.length(sequence.length)
+            ap_edge_len = ap_edge.length(sequence.length, window_head)
           }
         }
       case None => Unit
@@ -400,7 +444,7 @@ class SuffixTree[T] extends Logger {
       case None => ap.node.edges.contains(i)
       case Some(head) =>
         val edge_item_index = ap.node.edges(head).label.start + ap.length
-        i.equals(sequence(edge_item_index))
+        i.equals(sequence((edge_item_index - window_head).toInt))
     }
   }
 }
