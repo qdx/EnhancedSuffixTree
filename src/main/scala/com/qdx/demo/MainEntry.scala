@@ -21,10 +21,12 @@ object MainEntry extends App {
   //  manual_test_suffix_tree("abcabxabcd", '#')
 //    regex_search_test()
 
-  concurrent_demo()
-//  val tree = new SuffixTree[Char]
-//  tree.batch_input("dedododeeodo")
+//  concurrent_demo()
+  val tree = new SuffixTree[Char]
+  tree.batch_input("dedododeeodo")
 //  println(tree.show())
+  tree.move_window_head()
+  println(tree.show())
 
   def concurrent_demo(): Unit = {
     val system = ActorSystem("SuffixTree")

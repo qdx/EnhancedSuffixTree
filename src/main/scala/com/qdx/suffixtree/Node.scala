@@ -23,8 +23,8 @@ class Node[T](node_type: Int = 2, search_index: BigInt = -1) {
   if(type_ == Node.LEAF_NODE) assert(suffix_link.isEmpty)
   if(type_ == Node.ROOT) assert(suffix_link.isEmpty)
 
-  def add_edge(seq: ArrayBuffer[T], edge: Edge[T]): Unit = {
-    edges(seq(edge.label.start)) = edge
+  def add_edge(seq: ArrayBuffer[T], window_head: BigInt, edge: Edge[T]): Unit = {
+    edges(seq((edge.label.start - window_head).toInt)) = edge
   }
 
   def get_parent_node(): Option[Node[T]] = {

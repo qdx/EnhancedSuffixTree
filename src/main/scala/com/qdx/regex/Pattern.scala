@@ -123,7 +123,7 @@ class Pattern(p: String) extends Logger {
       result.append((n.search_index_, l))
     } else {
       for ((k, v) <- n.edges) {
-        val label = v.get_label_seq(t.sequence)
+        val label = v.get_label_seq(t.sequence, t.window_head)
         debug("searching label:" + label)
         // ALTERNATE: there should be a better way to unpack the returned results
         val match_str = match_string(label.mkString, s)
