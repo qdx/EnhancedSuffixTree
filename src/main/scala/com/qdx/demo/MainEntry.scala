@@ -23,8 +23,21 @@ object MainEntry extends App {
   //    regex_search_test()
 
   //  concurrent_demo()
-  println(sliding_test("mrsd"))
+  sliding_pattern_search()
 
+
+  def sliding_pattern_search(): Unit = {
+    val str = "Today is a good day and I will finish the recursive suffix tree!!!!"
+    val st = new SuffixTree[Char]
+    st.window_size = 6
+    val pattern = new Pattern("(a|t)(n|h)")
+    for(i <- str){
+      st.insert(i)
+      println(st.sequence.mkString)
+      println(st.window_head)
+      println(pattern.search_pattern(st).mkString(","))
+    }
+  }
 
   def sliding_test(s: String): Boolean = {
     val window_size = s.length / 2
@@ -197,10 +210,8 @@ object MainEntry extends App {
     for (i <- s) {
       counter += 1
       test.insert(i)
-      test.show()
     }
     test.insert(terminal)
-    test.show()
     var leaf_c = 0
     for (n <- test.breadth_first_traverse()) {
       if (n.type_ == Node.LEAF_NODE) {

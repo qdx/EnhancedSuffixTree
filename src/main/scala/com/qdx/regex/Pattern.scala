@@ -158,7 +158,7 @@ class Pattern(p: String) extends Logger {
         }
       }
     }
-    result
+    result.map(i => (i._1 - t.window_head, i._2))
   }
 
   // try to match a sequence of characters based on current states in the DFA
