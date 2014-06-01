@@ -7,7 +7,7 @@ import org.scalacheck._
 object SuffixTreeTest extends Properties("Suffix Tree Properties") {
   val alphabet = Gen.choose('a', 'z')
   val aTozString = for {
-    size <- Gen.choose(10, 10000)
+    size <- Gen.choose(10, 100)
     s <- Gen.listOfN(size, alphabet)
   } yield s.mkString
 
@@ -47,5 +47,25 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
       loop_index += 1
     }
     loop_flag && loop_index == nodes.length
+  }
+
+  property("equalsWorkCorrectly") = forAll(aTozString) { s: String =>
+    val st1 = new SuffixTree[Char]
+    val st2 = new SuffixTree[Char]
+    st1.batch_input(s)
+    st2.batch_input(s)
+    st1.equals(st2)
+  }
+
+  property("removeHead") = forAll(aTozString) { s: String =>
+    val st = new SuffixTree[Char]
+    st.batch_input(s)
+    Range(0, s.length - 1).forall(i => {
+      val st_compare = new SuffixTree[Char]
+      st_compare.batch_input(s slice(i, s.length))
+      val result = st.equals(st_compare)
+      st.move_window_head()
+      result
+    })
   }
 }
