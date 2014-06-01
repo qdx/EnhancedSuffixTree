@@ -3,11 +3,13 @@ import com.qdx.suffixtree.Node
 import com.qdx.logging.Logger
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
+import scala.collection.mutable.ArrayBuffer
 
 object SuffixTreeTest extends Properties("Suffix Tree Properties") {
+
   val alphabet = Gen.choose('a', 'z')
   val aTozString = for {
-    size <- Gen.choose(10, 100)
+    size <- Gen.choose(20, 100)
     s <- Gen.listOfN(size, alphabet)
   } yield s.mkString
 
@@ -66,6 +68,23 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
       val result = st.equals(st_compare)
       st.move_window_head()
       result
+    })
+  }
+
+  property("slidingWindow") = forAll(aTozString) { s: String =>
+    val window_size = s.length / 2
+    val sliding_tree = new SuffixTree[Char]
+    val test_buffer = new ArrayBuffer[Char]
+    sliding_tree.window_size = window_size
+    Range(0, s.length).forall(i => {
+      val st = new SuffixTree[Char]
+      val begin = if (i >= window_size) i + 1 - window_size else 0
+      val s1 = s slice(begin, i + 1)
+      test_buffer.append(s(i))
+      while(test_buffer.length > window_size) test_buffer.remove(0)
+      st.batch_input(s slice(begin, i + 1))
+      sliding_tree.insert(s(i))
+      st.equals(sliding_tree)
     })
   }
 }

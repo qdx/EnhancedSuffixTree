@@ -10,6 +10,7 @@ import scala.util.matching.Regex
 import scala.concurrent.duration._
 import java.io.File
 import akka.actor.{Props, ActorSystem}
+import scala.collection.mutable.ArrayBuffer
 
 object MainEntry extends App {
 
@@ -19,27 +20,34 @@ object MainEntry extends App {
   //  exact_path_search_test()
   //  special_suffix_tree_tests()
   //  manual_test_suffix_tree("abcabxabcd", '#')
-//    regex_search_test()
+  //    regex_search_test()
 
-//  concurrent_demo()
-  val tree = new SuffixTree[Char]
-  tree.log_level = Logger.DEBUG
-  tree.batch_input("cvjvj")
-  println(tree.show())
-//  println(tree.show())
-  tree.move_window_head()
-  println(tree.show())
-  tree.move_window_head()
-  println(tree.show())
-  tree.move_window_head()
-  println(tree.show())
-  println("==========================================")
-  val other_tree = new SuffixTree[Char]
-  other_tree.batch_input("vj")
-  println(other_tree.show())
+  //  concurrent_demo()
+  println(sliding_test("mrsd"))
 
-  println(tree.show().equals(other_tree.show()))
-  println(tree.equals(other_tree))
+
+  def sliding_test(s: String): Boolean = {
+    val window_size = s.length / 2
+    val sliding_tree = new SuffixTree[Char]
+    val test_buffer = new ArrayBuffer[Char]
+    sliding_tree.window_size = window_size
+    Range(0, s.length).forall(i => {
+      val st = new SuffixTree[Char]
+      val begin = if (i >= window_size) i + 1 - window_size else 0
+      val s1 = s slice(begin, i + 1)
+      test_buffer.append(s(i))
+      while(test_buffer.length > window_size) test_buffer.remove(0)
+      assert(s1.equals(test_buffer.mkString))
+      st.batch_input(s slice(begin, i + 1))
+      sliding_tree.insert(s(i))
+      println(s"sliding: ${sliding_tree.sequence.mkString}, st:${st.sequence.mkString}")
+      assert(sliding_tree.sequence.equals(st.sequence))
+      val result = st.equals(sliding_tree)
+      println(sliding_tree.show(label_as_item = false))
+      println(st.show(label_as_item = false))
+      result
+    })
+  }
 
   def concurrent_demo(): Unit = {
     val system = ActorSystem("SuffixTree")
@@ -50,14 +58,14 @@ object MainEntry extends App {
     import system.dispatcher
     val cancelable = system.scheduler.schedule(0 seconds, 5 seconds, st_query_actor, new Tick)
     var exit_flag = false
-    while(!exit_flag){
+    while (!exit_flag) {
       val command = Console.readLine()
-      if(command.startsWith("#p:")){
+      if (command.startsWith("#p:")) {
         val pattern = command slice(3, command.length)
         st_query_actor ! new Pattern(pattern)
-      }else if(command == "#exit"){
+      } else if (command == "#exit") {
         exit_flag = true
-      }else{
+      } else {
         st_input_actor ! command
       }
     }

@@ -17,6 +17,7 @@ class SuffixTree[T] extends Logger {
   val sequence = new ArrayBuffer[T]
   val leaves = new ArrayBuffer[Option[Node[T]]]
   var window_head = 0: BigInt
+  var window_size = 0: Int
 
   val root = new Node[T](0)
   var ap = new ActivePoint[T](root, None, 0)
@@ -69,6 +70,9 @@ class SuffixTree[T] extends Logger {
         remainder_index += 1
       }
       debug(get_active_point_string())
+    }
+    while (window_size > 0 && sequence.length > window_size) {
+      move_window_head()
     }
   }
 
@@ -137,7 +141,7 @@ class SuffixTree[T] extends Logger {
     "Active Point(" + ap.node.type_ + ", " + ap.edge_head + ", " + ap.length + ")"
   }
 
-  def show(back_link: Boolean = false): String = {
+  def show(back_link: Boolean = false, label_as_item: Boolean = true): String = {
     // used to do bfs
     val queue = new m.Queue[Node[T]]()
     queue.enqueue(root)
@@ -170,17 +174,16 @@ class SuffixTree[T] extends Logger {
           sb.append(id_map(n)).append(" -> ").append(id_map(e.to)).append(" [label=\"")
           // getting the label of edge
 
-          // TODO: fix the label
-          val end =
-            if (e.label.end == SuffixTree.SEQ_END) sequence.length - 1
-            else (e.label.end - window_head).toInt
-          val label = e.get_label_seq(sequence, window_head)
+          val label_index = s"(${e.label.start}, ${e.label.end}})"
+          val label =
+            if (label_as_item) e.get_label_seq(sequence, window_head).mkString
+            else e.get_label_seq(sequence, window_head).mkString + label_index
 
           if (e.to.type_ != Node.LEAF_NODE) {
             add_queue.enqueue(e.to)
-            sb.append(label.mkString).append("\"];\n")
+            sb.append(label).append("\"];\n")
           } else {
-            sb.append(label.mkString).append("@" + (e.to.search_index_ - window_head)).append("\"];\n")
+            sb.append(label).append("@" + (e.to.search_index_ - window_head)).append("\"];\n")
             if (back_link) {
               val ln = e.to
               sb.append(id_map(ln)).append(" -> ").append(id_map(ln.from_edge.get.from)).append(" ;\n")
@@ -228,11 +231,11 @@ class SuffixTree[T] extends Logger {
     else {
       // ALTERNATE: to make the implementation easier, only test existence here
       (n1.suffix_link.isDefined == n2.suffix_link.isDefined) &&
-       n1.edges.forall(x =>
-        n2.edges(x._1).get_label_seq(t2.sequence, t2.window_head)
-          .equals(x._2.get_label_seq(t1.sequence, t1.window_head))
-          && dfs_equals(x._2.to, n2.edges(x._1).to, t1, t2)
-      )
+        n1.edges.forall(x =>
+          n2.edges(x._1).get_label_seq(t2.sequence, t2.window_head)
+            .equals(x._2.get_label_seq(t1.sequence, t1.window_head))
+            && dfs_equals(x._2.to, n2.edges(x._1).to, t1, t2)
+        )
     }
   }
 
@@ -376,16 +379,16 @@ class SuffixTree[T] extends Logger {
       case Some(head) =>
         assert(ap.length != 0)
         debug("\t\t\t edge insert")
-        new_node = Some(edge_insert(ap.node, head, ap.length - 1, input, sequence.length - 1, search_index))
+        new_node = Some(edge_insert(ap.node, head, ap.length - 1, input, sequence.length - 1 + window_head, search_index))
       case None =>
         assert(ap.length == 0)
         debug("\t\t\t node insert")
-        node_insert(ap.node, input, sequence.length - 1, search_index)
+        node_insert(ap.node, input, sequence.length - 1 + window_head, search_index)
     }
     new_node
   }
 
-  private def node_insert(node: Node[T], edge_head: T, label_start: Int, search_index: BigInt): Unit = {
+  private def node_insert(node: Node[T], edge_head: T, label_start: BigInt, search_index: BigInt): Unit = {
     // create a new terminating edge
     val new_terminal_node = new Node[T](Node.LEAF_NODE, window_head + search_index)
     val new_edge = new Edge[T](label_start, SuffixTree.SEQ_END, node, new_terminal_node)
@@ -394,10 +397,10 @@ class SuffixTree[T] extends Logger {
     // link back to parent
     new_terminal_node.from_edge = Some(new_edge)
     // add the terminal node to leaf reference
-    leaves((remainder_index - window_head).toInt) = Some(new_terminal_node)
+    leaves(remainder_index) = Some(new_terminal_node)
   }
 
-  private def edge_insert(node: Node[T], edge_head: T, split_point: Int, input: T, label_start: Int, search_index: BigInt): Node[T] = {
+  private def edge_insert(node: Node[T], edge_head: T, split_point: Int, input: T, label_start: BigInt, search_index: BigInt): Node[T] = {
     // ----<name>---- stands for edges, O:<name> stands for node, then the following block of code
     // can be explained as:
     // ----old_edge----O:old_edge.to
