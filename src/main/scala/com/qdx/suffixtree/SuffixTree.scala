@@ -20,7 +20,7 @@ class SuffixTree[T] extends Logger {
 
   val root = new Node[T](0)
   var ap = new ActivePoint[T](root, None, 0)
-  var remainder_index = 0: BigInt
+  var remainder_index = 0: Int
 
   var previous_inserted_node = None: Option[Node[T]]
 
@@ -214,6 +214,28 @@ class SuffixTree[T] extends Logger {
     sequence((i - window_head).toInt)
   }
 
+  // test equality in a relative weak sense
+  def equals(t: SuffixTree[T]): Boolean = {
+    if (sequence.equals(t.sequence)) {
+      val thisroot = root
+      val thatroot = t.root
+      dfs_equals(thisroot, thatroot, this, t)
+    } else false
+  }
+
+  private def dfs_equals(n1: Node[T], n2: Node[T], t1: SuffixTree[T], t2: SuffixTree[T]): Boolean = {
+    if (!n1.edges.keySet.equals(n2.edges.keySet)) false
+    else {
+      // ALTERNATE: to make the implementation easier, only test existence here
+      (n1.suffix_link.isDefined == n2.suffix_link.isDefined) &&
+       n1.edges.forall(x =>
+        n2.edges(x._1).get_label_seq(t2.sequence, t2.window_head)
+          .equals(x._2.get_label_seq(t1.sequence, t1.window_head))
+          && dfs_equals(x._2.to, n2.edges(x._1).to, t1, t2)
+      )
+    }
+  }
+
   def move_window_head(): Unit = {
     // find the leaf node that represents the suffix we are deleting
     val n = leaves.head.get
@@ -222,11 +244,15 @@ class SuffixTree[T] extends Logger {
     // the edge from np to n
     val e = n.from_edge.get
 
+    debug(n.from_edge.get.get_label_seq(sequence, window_head).mkString(","))
     if (ap.node.equals(np) && ap.edge_head.isDefined && ap.get_edge().equals(n.from_edge)) {
       // when ap is on the edge that is leading to the leaf node we are looking at, we need to
       // insert the suffix indicated by remainder index
       e.label = new Label((remainder_index + (e.label.start - (n.search_index_ - window_head))).toInt, e.label.end)
       n.search_index_ = remainder_index + window_head
+      //TODO: fill the leaves !!! 叶子节点回填！
+      debug("relabeling edge and leaf")
+      leaves(remainder_index) = Some(n)
       bubble_up_label_change(np, e.label.start)
       move_active_point_after_split()
     } else {
@@ -245,6 +271,7 @@ class SuffixTree[T] extends Logger {
         // -------> npp -------------> o (we don't care)
         //           \ we don't care
         if (ap.node.equals(np)) {
+          debug("adjust ap")
           // when ap is in the subtree we are manipulating, we have to move ap to the correct position
           ap.node = npp
           ap.edge_head = Some(get_item(np.from_edge.get.label.start))
@@ -253,10 +280,12 @@ class SuffixTree[T] extends Logger {
         bubble_up_label_change(np, o.from_edge.get.label.start)
         val np_edge = np.from_edge.get
         // merging edges
+        debug("merging edges")
         np_edge.label = new Label(np_edge.label.start, o.from_edge.get.label.end)
         np_edge.to = o
         o.from_edge = np.from_edge
       } else if (np.edges.size >= 2 || np.type_ == Node.ROOT) {
+        debug("simply remove edge")
         // in this case, we just need to remove the leaf and it's from edge
         np.edges.remove(get_item(n.from_edge.get.label.start))
         bubble_up_label_change(np, np.edges.values.head.label.start)
@@ -276,7 +305,7 @@ class SuffixTree[T] extends Logger {
   private def bubble_up_label_change(starting: Node[T], base: BigInt): Unit = {
     var n = starting
     var b = base
-    while(n.type_ != Node.ROOT){
+    while (n.type_ != Node.ROOT) {
       val from_edge = n.from_edge.get
       val length = from_edge.length(sequence.length, window_head)
       from_edge.label = new Label(b - length, b - 1)
@@ -403,12 +432,12 @@ class SuffixTree[T] extends Logger {
     // TODO: I really forgot why I need this offset here
     val offset = if (ap.node.type_ == Node.ROOT) 1 else 0
     if (ap.node.type_ == Node.ROOT) {
-      // if we are at root, decrease ap length, move edge_head toward
+      // if we are at root, decrease ap length, move edge_head forward
       ap.edge_head match {
         case Some(head) =>
           ap.length -= 1
           if (ap.length == 0) ap.edge_head = None
-          else ap.edge_head = Some(get_item(remainder_index + 1))
+          else ap.edge_head = Some(sequence(remainder_index + 1))
         case None => Unit
       }
     } else {
