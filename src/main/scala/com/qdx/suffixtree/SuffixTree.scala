@@ -160,29 +160,29 @@ class SuffixTree[T] extends Logger {
 
       for (n <- queue) {
         debug("node " + id_map(n) + " has " + n.edges.size + " children")
-        for (e <- n.edges) {
+        for (e <- n.edges.values) {
           id_counter += {
-            if (!id_map.contains(e._2.to)) {
-              id_map(e._2.to) = id_counter
+            if (!id_map.contains(e.to)) {
+              id_map(e.to) = id_counter
               1
             } else 0
           }
-          sb.append(id_map(n)).append(" -> ").append(id_map(e._2.to)).append(" [label=\"")
+          sb.append(id_map(n)).append(" -> ").append(id_map(e.to)).append(" [label=\"")
           // getting the label of edge
 
           // TODO: fix the label
           val end =
-            if (e._2.label.end == SuffixTree.SEQ_END) sequence.length - 1
-            else (e._2.label.end - window_head).toInt
-          val label = e._2.get_label_seq(sequence, window_head)
+            if (e.label.end == SuffixTree.SEQ_END) sequence.length - 1
+            else (e.label.end - window_head).toInt
+          val label = e.get_label_seq(sequence, window_head)
 
-          if (e._2.to.type_ != Node.LEAF_NODE) {
-            add_queue.enqueue(e._2.to)
+          if (e.to.type_ != Node.LEAF_NODE) {
+            add_queue.enqueue(e.to)
             sb.append(label.mkString).append("\"];\n")
           } else {
-            sb.append(label.mkString).append("@" + (e._2.to.search_index_ - window_head)).append("\"];\n")
+            sb.append(label.mkString).append("@" + (e.to.search_index_ - window_head)).append("\"];\n")
             if (back_link) {
-              val ln = e._2.to
+              val ln = e.to
               sb.append(id_map(ln)).append(" -> ").append(id_map(ln.from_edge.get.from)).append(" ;\n")
             }
           }
@@ -210,6 +210,10 @@ class SuffixTree[T] extends Logger {
     sb.toString()
   }
 
+  def get_item(i: BigInt): T = {
+    sequence((i - window_head).toInt)
+  }
+
   def move_window_head(): Unit = {
     // find the leaf node that represents the suffix we are deleting
     val n = leaves.head.get
@@ -223,18 +227,19 @@ class SuffixTree[T] extends Logger {
       // insert the suffix indicated by remainder index
       e.label = new Label((remainder_index + (e.label.start - (n.search_index_ - window_head))).toInt, e.label.end)
       n.search_index_ = remainder_index + window_head
+      bubble_up_label_change(np, e.label.start)
       move_active_point_after_split()
     } else {
       // we don't need to insert any suffix, but we do need to remove the leaf we are looking at
       if (np.edges.size == 2 && np.type_ != Node.ROOT) {
 
         // get the other node
-        val other_edge_head = (np.edges.keySet - sequence((n.from_edge.get.label.start - window_head).toInt)).head
+        val other_edge_head = (np.edges.keySet - get_item(n.from_edge.get.label.start)).head
         val o = np.edges(other_edge_head).to
         val npp = np.get_parent_node().get
         // in this case we need to merge edges
         // to make it clearer, here is a graph:
-        // -------> npp --------------------------------> np --------> n
+        // -------> npp --------------------------------> np --------> n (we need to remove this leaf)
         //           \ we don't care about this subtree    \---------> o (we don't care about this subtree)
         // after the operation, we want it to look like
         // -------> npp -------------> o (we don't care)
@@ -242,16 +247,19 @@ class SuffixTree[T] extends Logger {
         if (ap.node.equals(np)) {
           // when ap is in the subtree we are manipulating, we have to move ap to the correct position
           ap.node = npp
-          ap.edge_head = Some(sequence((np.from_edge.get.label.start - window_head).toInt))
+          ap.edge_head = Some(get_item(np.from_edge.get.label.start))
           ap.length = np.from_edge.get.length(sequence.length, window_head) + ap.length
         }
+        bubble_up_label_change(np, o.from_edge.get.label.start)
+        val np_edge = np.from_edge.get
         // merging edges
-        np.from_edge.get.label = new Label(np.from_edge.get.label.start, o.from_edge.get.label.end)
-        np.from_edge.get.to = o
+        np_edge.label = new Label(np_edge.label.start, o.from_edge.get.label.end)
+        np_edge.to = o
         o.from_edge = np.from_edge
       } else if (np.edges.size >= 2 || np.type_ == Node.ROOT) {
         // in this case, we just need to remove the leaf and it's from edge
-        np.edges.remove(sequence((n.from_edge.get.label.start - window_head).toInt))
+        np.edges.remove(get_item(n.from_edge.get.label.start))
+        bubble_up_label_change(np, np.edges.values.head.label.start)
       } else {
         // any internal node should have at least 2 edges, in this branch this is violated
         throw new InternalNodeNumOfChildrenException
@@ -263,6 +271,18 @@ class SuffixTree[T] extends Logger {
     sequence.remove(0)
     leaves.remove(0)
     window_head += 1
+  }
+
+  private def bubble_up_label_change(starting: Node[T], base: BigInt): Unit = {
+    var n = starting
+    var b = base
+    while(n.type_ != Node.ROOT){
+      val from_edge = n.from_edge.get
+      val length = from_edge.length(sequence.length, window_head)
+      from_edge.label = new Label(b - length, b - 1)
+      b = from_edge.label.start
+      n = from_edge.from
+    }
   }
 
   private def establish_suffix_link(inserting: Boolean, match_result: Boolean, new_node: Option[Node[T]]): Unit = {
@@ -388,7 +408,7 @@ class SuffixTree[T] extends Logger {
         case Some(head) =>
           ap.length -= 1
           if (ap.length == 0) ap.edge_head = None
-          else ap.edge_head = Some(sequence((remainder_index - window_head + 1).toInt))
+          else ap.edge_head = Some(get_item(remainder_index + 1))
         case None => Unit
       }
     } else {
@@ -444,7 +464,7 @@ class SuffixTree[T] extends Logger {
       case None => ap.node.edges.contains(i)
       case Some(head) =>
         val edge_item_index = ap.node.edges(head).label.start + ap.length
-        i.equals(sequence((edge_item_index - window_head).toInt))
+        i.equals(get_item(edge_item_index))
     }
   }
 }

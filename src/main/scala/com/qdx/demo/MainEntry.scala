@@ -27,6 +27,12 @@ object MainEntry extends App {
 //  println(tree.show())
   tree.move_window_head()
   println(tree.show())
+  println("==========================================")
+  val other_tree = new SuffixTree[Char]
+  other_tree.batch_input("edododeeodo")
+  println(other_tree.show())
+
+  println(tree.show().equals(other_tree.show()))
 
   def concurrent_demo(): Unit = {
     val system = ActorSystem("SuffixTree")
