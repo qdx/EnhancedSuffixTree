@@ -18,6 +18,7 @@ class SuffixTree[T] extends Logger {
   val leaves = new ArrayBuffer[Option[Node[T]]]
   var window_head = 0: BigInt
   var window_size = 0: Int
+  var slide_size = 1: Int
 
   val root = new Node[T](0)
   var ap = new ActivePoint[T](root, None, 0)
@@ -28,7 +29,7 @@ class SuffixTree[T] extends Logger {
   var repeated = None: Option[SuffixTree[T]]
 
   def get_height(): Int = {
-    if(repeated.isDefined) repeated.get.get_height() + 1
+    if (repeated.isDefined) repeated.get.get_height() + 1
     else 0
   }
 
@@ -81,16 +82,14 @@ class SuffixTree[T] extends Logger {
         loop_flag = remainder_index < sequence.length - 1
         remainder_index += 1
         if (repeated.isDefined) {
-          repeated.get.move_head()
-          if(repeated.get.sequence.length == 0) repeated = None
+          repeated.get.slide()
+          if (repeated.get.sequence.length == 0) repeated = None
         }
       }
       debug(get_active_point_string())
       debug(show(label_as_item = false))
     }
-    while (window_size > 0 && sequence.length > window_size) {
-      move_head()
-    }
+    slide()
   }
 
   // standard BFS traverse of the tree that returns a list of the nodes
@@ -256,7 +255,15 @@ class SuffixTree[T] extends Logger {
     }
   }
 
-  def move_head(): Unit = {
+  def set_slide_size(size: Int): Unit = slide_size = size
+
+  def slide(): Unit = {
+    while(sequence.length > window_size + slide_size){
+      Range(0, slide_size).foreach(_ => slide_one())
+    }
+  }
+
+  private def slide_one(): Unit = {
     if (leaves.size == 0) return
     // find the leaf node that represents the suffix we are deleting
     val n = leaves.head.get
