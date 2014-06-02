@@ -3,7 +3,7 @@ package com.qdx.suffixtree.experiments
 import com.qdx.suffixtree.suffixtree._
 
 
-object CorpseTest {
+object CorpusTest {
 
   def recursion_depth(window_size: Int, file_name: String): Double = {
     val input = io.Source.fromURL(getClass.getResource("/" + file_name)).mkString
