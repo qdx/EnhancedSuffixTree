@@ -66,7 +66,7 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
       val st_compare = new SuffixTree[Char]
       st_compare.batch_input(s slice(i, s.length))
       val result = st.equals(st_compare)
-      st.move_head()
+      st.slide()
       result
     })
   }
