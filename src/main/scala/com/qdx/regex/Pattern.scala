@@ -120,7 +120,7 @@ class Pattern(p: String) extends Logger {
                                      previous_accept_length: Int): ArrayBuffer[(BigInt, Int)] = {
     val result = new ArrayBuffer[(BigInt, Int)]()
     if (n.type_ == Node.LEAF_NODE) {
-      result.append((n.search_index_, l))
+      if (previous_accept_length > 0) result.append((n.search_index_, l))
     } else {
       for ((k, v) <- n.edges) {
         val label = v.get_label_seq(t.sequence, t.window_head)
