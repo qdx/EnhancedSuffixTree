@@ -110,11 +110,11 @@ class Pattern(p: String) extends Logger {
     } else {
       new ArrayBuffer[(BigInt, Int)]()
     }
-    val short_result = eliminate_suffixes(long_result)
     if(t.repeated.isDefined && t.repeated.get.sequence.length > 0){
       val repeated_suffix_search = search_pattern(t.repeated.get)
-      short_result ++= repeated_suffix_search.map(i => (i._1 + t.remainder_index, i._2))
+      long_result ++= repeated_suffix_search.map(i => (i._1 + t.remainder_index, i._2))
     }
+    val short_result = eliminate_suffixes(long_result)
     short_result
   }
 
