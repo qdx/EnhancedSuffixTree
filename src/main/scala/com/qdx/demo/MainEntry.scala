@@ -33,9 +33,7 @@ object MainEntry extends App {
     val pattern = new Pattern("(a|t)(n|h)")
     for(i <- str){
       st.insert(i)
-      println(st.sequence.mkString)
-      println(st.window_head)
-      println(pattern.search_pattern(st).mkString(","))
+      println(st.sequence.mkString + st.window_head + pattern.search_pattern(st).mkString(","))
     }
   }
 

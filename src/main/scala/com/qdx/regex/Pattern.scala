@@ -138,7 +138,7 @@ class Pattern(p: String) extends Logger {
                                      previous_accept_length: Int): ArrayBuffer[(BigInt, Int)] = {
     val result = new ArrayBuffer[(BigInt, Int)]()
     if (n.type_ == Node.LEAF_NODE) {
-      if (previous_accept_length > 0) result.append((n.search_index_, l))
+      if (previous_accept_length > 0) result.append((n.search_index_ - t.window_head, l))
     } else {
       for ((k, v) <- n.edges) {
         val label = v.get_label_seq(t.sequence, t.window_head)
@@ -172,11 +172,11 @@ class Pattern(p: String) extends Logger {
             if (previous_accept_state.size > 0 || previous_accept_length > 0)
               t.breadth_first_traverse(v.to)
                 .filter(n => n.type_ == Node.LEAF_NODE)
-                .foreach(leaf => result.append((leaf.search_index_, l + accept_count)))
+                .foreach(leaf => result.append((leaf.search_index_ - t.window_head, l + accept_count)))
         }
       }
     }
-    result.map(i => (i._1 - t.window_head, i._2))
+    result
   }
 
   // try to match a sequence of characters based on current states in the DFA
