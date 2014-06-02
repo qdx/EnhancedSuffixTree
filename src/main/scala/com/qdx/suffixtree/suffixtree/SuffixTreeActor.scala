@@ -4,10 +4,12 @@ import akka.actor.Actor
 import com.qdx.suffixtree.regex.Pattern
 import com.qdx.suffixtree.demo.Tick
 import java.io.FileWriter
+import scala.collection.{mutable => m}
 
 class SuffixTreeActor extends Actor {
   val suffix_tree = new SuffixTree[Char]
   var pattern_cache = new Pattern("")
+  var result_buffer = new m.HashSet[(BigInt, Int)]()
 
   def receive = {
     case input: String =>
@@ -25,13 +27,19 @@ class SuffixTreeActor extends Actor {
   }
 
   def query_output(): Unit = {
-    val result = pattern_cache.search_pattern(suffix_tree).sorted.mkString(" ")
-    val fw = new FileWriter("query_result.txt", true)
-    try {
-      fw.write(result + "\n")
-    }
-    finally {
-      fw.close()
+    val result = pattern_cache.search_pattern(suffix_tree)
+    val result_set = new m.HashSet[(BigInt, Int)]()
+    result_set ++= result
+    if (!result_set.equals(result_buffer)) {
+      result_buffer = result_set
+      val result_str = result.sorted.mkString(", ")
+      val fw = new FileWriter("query_result.txt", true)
+      try {
+        fw.write(result_str + "\n")
+      }
+      finally {
+        fw.close()
+      }
     }
   }
 }
