@@ -1,6 +1,6 @@
-import com.qdx.suffixtree.SuffixTree
-import com.qdx.suffixtree.Node
-import com.qdx.logging.Logger
+import com.qdx.suffixtree.suffixtree.SuffixTree
+import com.qdx.suffixtree.suffixtree.Node
+import com.qdx.debugging.Logger
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
 import scala.collection.mutable.ArrayBuffer
@@ -9,7 +9,7 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
 
   val alphabet = Gen.choose('a', 'z')
   val aTozString = for {
-    size <- Gen.choose(20, 100)
+    size <- Gen.choose(20, 50)
     s <- Gen.listOfN(size, alphabet)
   } yield s.mkString
 

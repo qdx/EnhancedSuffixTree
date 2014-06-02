@@ -1,4 +1,4 @@
-package com.qdx.logging
+package com.qdx.debugging
 
 object Logger {
   val ERROR = 0

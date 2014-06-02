@@ -1,10 +1,10 @@
-package com.qdx.demo
+package com.qdx.suffixtree.demo
 
 import scala.collection.{mutable => m}
 import scala.util.Random
-import com.qdx.suffixtree.{SuffixTreeActor, SuffixTree, Node}
-import com.qdx.logging.Logger
-import com.qdx.regex.Pattern
+import com.qdx.suffixtree.suffixtree.{SuffixTreeActor, SuffixTree, Node}
+import com.qdx.debugging.Logger
+import com.qdx.suffixtree.regex.Pattern
 import com.qdx.stream.automaton._
 import scala.util.matching.Regex
 import scala.concurrent.duration._

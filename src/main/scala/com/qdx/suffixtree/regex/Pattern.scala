@@ -1,9 +1,9 @@
-package com.qdx.regex
+package com.qdx.suffixtree.regex
 
 import scala.collection.{mutable => m}
 import scala.collection.mutable.ArrayBuffer
-import com.qdx.logging.Logger
-import com.qdx.suffixtree._
+import com.qdx.debugging.Logger
+import com.qdx.suffixtree.suffixtree._
 
 object Pattern {
   // some special characters used to handle inner representation

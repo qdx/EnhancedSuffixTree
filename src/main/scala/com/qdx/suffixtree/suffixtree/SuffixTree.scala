@@ -1,8 +1,8 @@
-package com.qdx.suffixtree
+package com.qdx.suffixtree.suffixtree
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{mutable => m}
-import com.qdx.logging.Logger
+import com.qdx.debugging.Logger
 
 object SuffixTree {
   val SEQ_END = BigInt(-1)

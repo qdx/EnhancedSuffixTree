@@ -1,4 +1,4 @@
-package com.qdx.demo
+package com.qdx.suffixtree.demo
 
 import akka.actor.{ActorRef, Actor}
 

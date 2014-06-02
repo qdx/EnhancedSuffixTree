@@ -1,4 +1,4 @@
-package com.qdx.suffixtree
+package com.qdx.suffixtree.suffixtree
 
 import scala.collection.mutable.ArrayBuffer
 

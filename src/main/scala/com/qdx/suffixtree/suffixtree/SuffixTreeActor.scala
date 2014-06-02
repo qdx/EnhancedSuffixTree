@@ -1,8 +1,8 @@
-package com.qdx.suffixtree
+package com.qdx.suffixtree.suffixtree
 
 import akka.actor.Actor
-import com.qdx.regex.Pattern
-import com.qdx.demo.Tick
+import com.qdx.suffixtree.regex.Pattern
+import com.qdx.suffixtree.demo.Tick
 import java.io.FileWriter
 
 class SuffixTreeActor extends Actor {

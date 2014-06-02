@@ -1,4 +1,4 @@
-package com.qdx.suffixtree
+package com.qdx.suffixtree.suffixtree
 
 class ActivePoint[T](a_node: Node[T], a_edge: Option[T] , a_length: Int) {
   var node = a_node

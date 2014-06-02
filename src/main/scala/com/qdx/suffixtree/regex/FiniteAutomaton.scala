@@ -1,4 +1,4 @@
-package com.qdx.regex
+package com.qdx.suffixtree.regex
 
 import scala.collection.{mutable => m}
 import scala.collection.mutable.ArrayBuffer
