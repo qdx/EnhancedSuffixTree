@@ -103,14 +103,19 @@ class Pattern(p: String) extends Logger {
   }
 
   def search_pattern(t: SuffixTree[Char]): ArrayBuffer[(BigInt, Int)] = {
-    val result = if (dfa.isDefined) {
+    val long_result = if (dfa.isDefined) {
       val start = new m.HashSet[State]()
       start.add(dfa.get.start)
       search_pattern_routine(start, t, t.root, 0, 0)
     } else {
       new ArrayBuffer[(BigInt, Int)]()
     }
-    eliminate_suffixes(result)
+    val short_result = eliminate_suffixes(long_result)
+    if(t.repeated.isDefined && t.repeated.get.sequence.length > 0){
+      val repeated_suffix_search = search_pattern(t.repeated.get)
+      short_result ++= repeated_suffix_search.map(i => (i._1 + t.remainder_index, i._2))
+    }
+    short_result
   }
 
   private def eliminate_suffixes(result: ArrayBuffer[(BigInt, Int)]): ArrayBuffer[(BigInt, Int)] = {

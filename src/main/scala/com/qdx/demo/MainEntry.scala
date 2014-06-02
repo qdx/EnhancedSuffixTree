@@ -20,11 +20,19 @@ object MainEntry extends App {
   //  exact_path_search_test()
   //  special_suffix_tree_tests()
   //  manual_test_suffix_tree("abcabxabcd", '#')
-  //    regex_search_test()
+//      regex_search_test()
 
-  //  concurrent_demo()
-  sliding_pattern_search()
+    concurrent_demo()
 
+//  recursive_pattern_search_test()
+
+  def recursive_pattern_search_test(): Unit = {
+    val str = "this is a pattern seen before, a pattern"
+    val st = new SuffixTree[Char]
+    st.batch_input(str)
+    val pattern = new Pattern("pat+")
+    println(pattern.search_pattern(st).mkString(","))
+  }
 
   def sliding_pattern_search(): Unit = {
     val str = "Today is a good day and I will finish the recursive suffix tree!!!!"
