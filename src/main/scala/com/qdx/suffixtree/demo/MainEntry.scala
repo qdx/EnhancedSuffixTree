@@ -6,6 +6,7 @@ import com.qdx.suffixtree.suffixtree.{SuffixTreeActor, SuffixTree, Node}
 import com.qdx.debugging.Logger
 import com.qdx.suffixtree.regex.Pattern
 import com.qdx.stream.automaton._
+import com.qdx.suffixtree.experiments._
 import scala.util.matching.Regex
 import scala.concurrent.duration._
 import akka.actor.{Props, ActorSystem}
@@ -23,6 +24,9 @@ object MainEntry extends App {
   //  manual_test_suffix_tree("abcabxabcd", '#')
   //  regex_search_test()
 
+//  concurrent_demo()
+
+    sliding_pattern_search()
 
   val result = time_to_build_tree(1000)
 //  val fw = new FileWriter("classic_suffix_tree_build_time.txt", true)
@@ -50,10 +54,10 @@ object MainEntry extends App {
     val str = "Today is a good day and I will finish the recursive suffix tree!!!!"
     val st = new SuffixTree[Char]
     st.window_size = 6
+    st.slide_size = 2
     val pattern = new Pattern("(a|t)(n|h)")
-    for(i <- str){
+    for (i <- str) {
       st.insert(i)
-
       println("tree height is:" + st.get_height() + "; " + st.sequence.mkString + st.window_head + pattern.search_pattern(st).mkString(","))
     }
   }
@@ -68,7 +72,7 @@ object MainEntry extends App {
       val begin = if (i >= window_size) i + 1 - window_size else 0
       val s1 = s slice(begin, i + 1)
       test_buffer.append(s(i))
-      while(test_buffer.length > window_size) test_buffer.remove(0)
+      while (test_buffer.length > window_size) test_buffer.remove(0)
       assert(s1.equals(test_buffer.mkString))
       st.batch_input(s slice(begin, i + 1))
       sliding_tree.insert(s(i))
