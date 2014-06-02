@@ -27,6 +27,11 @@ class SuffixTree[T] extends Logger {
 
   var repeated = None: Option[SuffixTree[T]]
 
+  def get_height(): Int = {
+    if(repeated.isDefined) repeated.get.get_height() + 1
+    else 0
+  }
+
   def batch_input(l: Iterable[T]): Unit = l.foreach((i: T) => insert(i))
 
   def insert(i: T): Unit = {
@@ -57,7 +62,7 @@ class SuffixTree[T] extends Logger {
         walk_down_ap((ap.node.edges(ap.edge_head.get).label.start - window_head).toInt)
         if (repeated.isEmpty) {
           repeated = Some(new SuffixTree[T])
-//          repeated.get.log_level = Logger.DEBUG
+          //          repeated.get.log_level = Logger.DEBUG
         }
         repeated.get.insert(i)
       } else {
@@ -75,7 +80,10 @@ class SuffixTree[T] extends Logger {
         move_active_point_after_split()
         loop_flag = remainder_index < sequence.length - 1
         remainder_index += 1
-        if (repeated.isDefined) repeated.get.move_head()
+        if (repeated.isDefined) {
+          repeated.get.move_head()
+          if(repeated.get.sequence.length == 0) repeated = None
+        }
       }
       debug(get_active_point_string())
       debug(show(label_as_item = false))
@@ -249,7 +257,7 @@ class SuffixTree[T] extends Logger {
   }
 
   def move_head(): Unit = {
-    if(leaves.size == 0) return
+    if (leaves.size == 0) return
     // find the leaf node that represents the suffix we are deleting
     val n = leaves.head.get
     // find the parent of that leaf node
@@ -274,7 +282,6 @@ class SuffixTree[T] extends Logger {
         // insert the suffix indicated by remainder index
         e.label = new Label((remainder_index + (e.label.start - (n.search_index_ - window_head))).toInt, e.label.end)
         n.search_index_ = remainder_index + window_head
-        //TODO: fill the leaves !!! 叶子节点回填！
         debug("relabeling edge and leaf")
         leaves(remainder_index) = Some(n)
         bubble_up_label_change(np, e.label.start)

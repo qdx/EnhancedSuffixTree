@@ -22,7 +22,8 @@ object MainEntry extends App {
   //  manual_test_suffix_tree("abcabxabcd", '#')
 //      regex_search_test()
 
-    concurrent_demo()
+//    concurrent_demo()
+  sliding_pattern_search()
 
 //  recursive_pattern_search_test()
 
@@ -41,7 +42,8 @@ object MainEntry extends App {
     val pattern = new Pattern("(a|t)(n|h)")
     for(i <- str){
       st.insert(i)
-      println(st.sequence.mkString + st.window_head + pattern.search_pattern(st).mkString(","))
+
+      println("tree height is:" + st.get_height() + "; " + st.sequence.mkString + st.window_head + pattern.search_pattern(st).mkString(","))
     }
   }
 
