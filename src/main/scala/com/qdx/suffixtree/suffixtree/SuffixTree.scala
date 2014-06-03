@@ -86,8 +86,8 @@ class SuffixTree[T] extends Logger {
           if (repeated.get.sequence.length == 0) repeated = None
         }
       }
-      debug(get_active_point_string())
-      debug(show(label_as_item = false))
+//      debug(get_active_point_string())
+//      debug(show(label_as_item = false))
     }
     slide()
   }

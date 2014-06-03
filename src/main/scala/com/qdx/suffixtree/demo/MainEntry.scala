@@ -12,29 +12,55 @@ import scala.concurrent.duration._
 import akka.actor.{Props, ActorSystem}
 import scala.collection.mutable.ArrayBuffer
 import java.io.FileWriter
-import objectexplorer.ObjectGraphMeasurer
 
 object MainEntry extends App {
 
 
-  val result = time_to_build_tree(1000)
-//  val fw = new FileWriter("bottleneck.txt", true)
-//  try {
-//    fw.write(result)
-//  }
-//  finally {
-//    fw.close()
-//  }
+    val result = time_to_build_tree(1000)
 
-//  val st = new SuffixTree[Char]
-//  val target = io.Source.fromURL(getClass.getResource("/small.txt")).mkString
-//  val average_depth =  target.map(c => {
-//    st.insert(c)
-//    st.get_height()
-//  }).sum.toDouble / target.length.toDouble
-//  println(average_depth)
+//    val st = new SuffixTree[Char]
+//    val target = io.Source.fromURL(getClass.getResource("/small.txt")).mkString
+//    val average_depth =  target.map(c => {
+//      st.insert(c)
+//      st.get_height()
+//    }).sum.toDouble / target.length.toDouble
+//    println(average_depth)
 
+  /*
+  val interval = 1000
+  val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString
+  val result = new ArrayBuffer[StringBuilder]()
+  result.append(new StringBuilder())
+//  result.append(new StringBuilder())
+//  result.append(new StringBuilder())
+  result(0).append("\n{")
+  for (i <- Range(1, 2)) {
+    val input = target.slice(0, i * interval) + "~"
+    val st = new SuffixTree[Char]
+    var index = 0
+    for (c <- input) {
+      val t_measure = st.insert(c)
+      result(0).append(s"{$index, $t_measure},")
+//      result(1).append(s"{$index, ${t_measure._2}},")
+//      result(2).append(s"{$index, ${t_measure._3}},")
+      index += 1
+    }
+    println(s"testing input length: ${i * interval}")
+  }
+  result(0).append("}")
+//  result(1).append("}")
+//  result(2).append("}")
+*/
 
+  val fw = new FileWriter("bottleneck.txt", true)
+  try {
+    fw.write(result + "\n")
+//    fw.write(result(1).toString() + "\n")
+//    fw.write(result(2).toString() + "\n")
+  }
+  finally {
+    fw.close()
+  }
 
   def recursive_pattern_search_test(): Unit = {
     val str = "this is a pattern seen before, a pattern"
@@ -83,18 +109,11 @@ object MainEntry extends App {
     val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString
     val result = new StringBuilder()
     result.append("{")
-    for (i <- Range(1, 2)) {
+    for (i <- Range(1, 800)) {
       val input = target.slice(0, i * interval) + "~"
       val st = new SuffixTree[Char]
-      var index = 0
-      var height_sum = 0
-      for(c <- input){
-        val t_measure = Timing.time(st.insert(c))
-        result.append(s"{$index, $t_measure},")
-        height_sum += st.get_height()
-        index += 1
-      }
-      println("height:" + (height_sum.toDouble / interval.toDouble))
+      val t_measure = Timing.time(st.batch_input(input))
+      result.append(s"{${i*interval}, $t_measure},")
       println(s"testing input length: ${i * interval}")
     }
     result.append("}")
