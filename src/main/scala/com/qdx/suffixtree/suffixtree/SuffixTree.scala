@@ -47,17 +47,8 @@ class SuffixTree[T] extends Logger {
       val match_result = match_one_item(i)
       if (match_result) {
         // match success, no need to insert anything, just move ap and setup suffix link
-        debug("match success: " + i.toString)
-        debug(get_status_string())
         ap.edge_head = ap.edge_head.orElse(Some(i))
         ap.length += 1
-        debug(get_active_point_string())
-        debug("\t\t\t remainder:" + remainder_index + " seq:" + sequence.length)
-        debug("\t\t\t defined:" + previous_inserted_node.isDefined)
-        debug("\t\t\t ap node:" + get_active_point_string())
-        debug("\t\t\t inserting:" + inserting)
-        if (previous_inserted_node.isDefined)
-          debug("\t\t\t is the same:" + ap.node.equals(previous_inserted_node.get))
         establish_suffix_link(inserting, match_result, None)
         loop_flag = false
         walk_down_ap((ap.node.edges(ap.edge_head.get).label.start - window_head).toInt)
@@ -68,15 +59,8 @@ class SuffixTree[T] extends Logger {
         repeated.get.insert(i)
       } else {
         // when match failed, insert the suffixes from remainder_index till the end
-        debug("match failed: " + i.toString)
-        debug(get_status_string())
         inserting = true
         val new_node = insert_suffix(remainder_index, i)
-        debug("\t\t\t remainder:" + remainder_index + " seq:" + sequence.length)
-        debug("\t\t\t defined:" + previous_inserted_node.isDefined)
-        debug("\t\t\t ap node:" + get_active_point_string())
-        debug("\t\t\t inserting:" + inserting)
-        debug("\t\t\t previous node defined: " + previous_inserted_node.isDefined)
         establish_suffix_link(inserting, match_result, new_node)
         move_active_point_after_split()
         loop_flag = remainder_index < sequence.length - 1
@@ -86,8 +70,6 @@ class SuffixTree[T] extends Logger {
           if (repeated.get.sequence.length == 0) repeated = None
         }
       }
-//      debug(get_active_point_string())
-//      debug(show(label_as_item = false))
     }
     slide()
   }
@@ -273,7 +255,6 @@ class SuffixTree[T] extends Logger {
     // the edge from np to n
     val e = n.from_edge.get
 
-    debug(n.from_edge.get.get_label_seq(sequence, window_head).mkString(","))
     if (sequence.length == 1 && np.type_ == Node.ROOT) {
       sequence.clear()
       leaves.clear()
@@ -290,7 +271,6 @@ class SuffixTree[T] extends Logger {
         // insert the suffix indicated by remainder index
         e.label = new Label((remainder_index + (e.label.start - (n.search_index_ - window_head))).toInt, e.label.end)
         n.search_index_ = remainder_index + window_head
-        debug("relabeling edge and leaf")
         leaves(remainder_index) = Some(n)
         bubble_up_label_change(np, e.label.start)
         move_active_point_after_split()
@@ -311,7 +291,6 @@ class SuffixTree[T] extends Logger {
           // -------> npp -------------> o (we don't care)
           //           \ we don't care
           if (ap.node.equals(np)) {
-            debug("adjust ap")
             // when ap is in the subtree we are manipulating, we have to move ap to the correct position
             ap.node = npp
             ap.edge_head = Some(get_item(np.from_edge.get.label.start))
@@ -320,12 +299,10 @@ class SuffixTree[T] extends Logger {
           bubble_up_label_change(np, o.from_edge.get.label.start)
           val np_edge = np.from_edge.get
           // merging edges
-          debug("merging edges")
           np_edge.label = new Label(np_edge.label.start, o.from_edge.get.label.end)
           np_edge.to = o
           o.from_edge = np.from_edge
         } else if (np.edges.size >= 2 || np.type_ == Node.ROOT) {
-          debug("simply remove edge")
           // in this case, we just need to remove the leaf and it's from edge
           np.edges.remove(get_item(n.from_edge.get.label.start))
           bubble_up_label_change(np, np.edges.values.head.label.start)
@@ -341,7 +318,6 @@ class SuffixTree[T] extends Logger {
       leaves.remove(0)
       window_head += 1
     }
-    debug(show(label_as_item = false))
   }
 
   private def bubble_up_label_change(starting: Node[T], base: BigInt): Unit = {
@@ -372,7 +348,6 @@ class SuffixTree[T] extends Logger {
               // is similar to case 3, with the only difference is that in this case, no new node or
               // edge is inerted
               if (pnode.suffix_link.isEmpty && ap.node.type_ == Node.INTERNAL_NODE && !ap.node.equals(pnode)) {
-                debug("\t\t suffix link inserted")
                 pnode.suffix_link = Some(ap.node)
               }
             case None =>
@@ -387,7 +362,6 @@ class SuffixTree[T] extends Logger {
               case Some(pnode) =>
                 // case 1: link between previously inserted new node and currently inserted new node
                 if (pnode.suffix_link.isEmpty) {
-                  debug("\t\t suffix link inserted")
                   pnode.suffix_link = Some(node)
                 }
                 previous_inserted_node = Some(node)
@@ -400,7 +374,6 @@ class SuffixTree[T] extends Logger {
                 // case 3: when no new internal node is inserted, link between previously inserted new node and
                 // the active node where terminal edge is inserted
                 if (pnode.suffix_link.isEmpty && ap.node.type_ == Node.INTERNAL_NODE && !ap.node.equals(pnode)) {
-                  debug("\t\t suffix link inserted")
                   pnode.suffix_link = Some(ap.node)
                 }
               case None =>
@@ -417,11 +390,9 @@ class SuffixTree[T] extends Logger {
     ap.edge_head match {
       case Some(head) =>
         assert(ap.length != 0)
-        debug("\t\t\t edge insert")
         new_node = Some(edge_insert(ap.node, head, ap.length - 1, input, sequence.length - 1 + window_head, search_index))
       case None =>
         assert(ap.length == 0)
-        debug("\t\t\t node insert")
         node_insert(ap.node, input, sequence.length - 1 + window_head, search_index)
     }
     new_node
@@ -456,7 +427,6 @@ class SuffixTree[T] extends Logger {
     old_edge.label = new Label(old_edge.label.start, old_edge.label.start + split_point)
     old_edge.to = new_node
     new_node.from_edge = Some(old_edge)
-    debug("\t\t" + new_edge.label.toString)
     new_node.add_edge(sequence, window_head, new_edge)
 
     node_insert(new_node, input, label_start, search_index)
@@ -490,13 +460,11 @@ class SuffixTree[T] extends Logger {
       }
     }
 
-    debug(get_active_point_string())
     // walk down ap if ap length is greater than current active edge length
     if (old_label.isDefined
       && ap.edge_head.isDefined
       && ap.length >= ap.node.edges(ap.edge_head.get).length(sequence.length, window_head))
       walk_down_ap((old_label.get.start + offset - window_head).toInt)
-    debug(get_active_point_string())
   }
 
   // walk along paths when ap length is greater than current active edge
