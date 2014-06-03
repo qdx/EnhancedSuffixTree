@@ -8,8 +8,9 @@ import com.qdx.regex.Pattern
 import com.qdx.stream.automaton._
 import scala.util.matching.Regex
 import scala.concurrent.duration._
-import java.io.File
 import akka.actor.{Props, ActorSystem}
+import java.io.FileWriter
+import objectexplorer.ObjectGraphMeasurer
 
 object MainEntry extends App {
 
@@ -19,12 +20,44 @@ object MainEntry extends App {
   //  exact_path_search_test()
   //  special_suffix_tree_tests()
   //  manual_test_suffix_tree("abcabxabcd", '#')
-    regex_search_test()
+  //  regex_search_test()
 
-//  concurrent_demo()
-//  val tree = new SuffixTree[Char]
-//  tree.batch_input("dedododeeodo")
-//  println(tree.show())
+
+  val result = time_to_build_tree(1000)
+//  val fw = new FileWriter("classic_suffix_tree_build_time.txt", true)
+//  try {
+//    fw.write(result)
+//  }
+//  finally {
+//    fw.close()
+//  }
+
+  //  concurrent_demo()
+  //  val tree = new SuffixTree[Char]
+  //  tree.batch_input("dedododeeodo")
+  //  println(tree.show())
+
+  def time_to_build_tree(interval: Int): String = {
+    val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString
+    val result = new StringBuilder()
+    result.append("{")
+    for (i <- Range(0, 5)) {
+      val input = target.slice(0, i * interval) + "~"
+      val st = new SuffixTree[Char]
+      val t_measure = time(st.batch_input(input))
+      result.append(s"{${i * interval}, $t_measure},")
+      println(s"testing input length: ${i * interval}")
+
+    }
+    result.append("}")
+    result.toString()
+  }
+
+  def time[A](f: => A) = {
+    val s = System.nanoTime
+    f
+    (System.nanoTime - s) / 1e6
+  }
 
   def concurrent_demo(): Unit = {
     val system = ActorSystem("SuffixTree")
@@ -35,14 +68,14 @@ object MainEntry extends App {
     import system.dispatcher
     val cancelable = system.scheduler.schedule(0 seconds, 5 seconds, st_query_actor, new Tick)
     var exit_flag = false
-    while(!exit_flag){
+    while (!exit_flag) {
       val command = Console.readLine()
-      if(command.startsWith("#p:")){
+      if (command.startsWith("#p:")) {
         val pattern = command slice(3, command.length)
         st_query_actor ! new Pattern(pattern)
-      }else if(command == "#exit"){
+      } else if (command == "#exit") {
         exit_flag = true
-      }else{
+      } else {
         st_input_actor ! command
       }
     }
