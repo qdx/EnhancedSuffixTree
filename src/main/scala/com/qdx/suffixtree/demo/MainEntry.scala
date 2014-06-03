@@ -16,20 +16,9 @@ import objectexplorer.ObjectGraphMeasurer
 
 object MainEntry extends App {
 
-  //  stream_automaton_test()
-  //  transition_test()
-
-  //  exact_path_search_test()
-  //  special_suffix_tree_tests()
-  //  manual_test_suffix_tree("abcabxabcd", '#')
-  //  regex_search_test()
-
-//  concurrent_demo()
-
-    sliding_pattern_search()
 
   val result = time_to_build_tree(1000)
-//  val fw = new FileWriter("classic_suffix_tree_build_time.txt", true)
+//  val fw = new FileWriter("bottleneck.txt", true)
 //  try {
 //    fw.write(result)
 //  }
@@ -37,10 +26,15 @@ object MainEntry extends App {
 //    fw.close()
 //  }
 
-//    concurrent_demo()
-  //  val tree = new SuffixTree[Char]
-  //  tree.batch_input("dedododeeodo")
-  //  println(tree.show())
+//  val st = new SuffixTree[Char]
+//  val target = io.Source.fromURL(getClass.getResource("/small.txt")).mkString
+//  val average_depth =  target.map(c => {
+//    st.insert(c)
+//    st.get_height()
+//  }).sum.toDouble / target.length.toDouble
+//  println(average_depth)
+
+
 
   def recursive_pattern_search_test(): Unit = {
     val str = "this is a pattern seen before, a pattern"
@@ -54,7 +48,7 @@ object MainEntry extends App {
     val str = "Today is a good day and I will finish the recursive suffix tree!!!!"
     val st = new SuffixTree[Char]
     st.window_size = 6
-    st.slide_size = 2
+    st.slide_size = 3
     val pattern = new Pattern("(a|t)(n|h)")
     for (i <- str) {
       st.insert(i)
@@ -89,22 +83,22 @@ object MainEntry extends App {
     val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString
     val result = new StringBuilder()
     result.append("{")
-    for (i <- Range(0, 5)) {
+    for (i <- Range(1, 2)) {
       val input = target.slice(0, i * interval) + "~"
       val st = new SuffixTree[Char]
-      val t_measure = time(st.batch_input(input))
-      result.append(s"{${i * interval}, $t_measure},")
+      var index = 0
+      var height_sum = 0
+      for(c <- input){
+        val t_measure = Timing.time(st.insert(c))
+        result.append(s"{$index, $t_measure},")
+        height_sum += st.get_height()
+        index += 1
+      }
+      println("height:" + (height_sum.toDouble / interval.toDouble))
       println(s"testing input length: ${i * interval}")
-
     }
     result.append("}")
     result.toString()
-  }
-
-  def time[A](f: => A) = {
-    val s = System.nanoTime
-    f
-    (System.nanoTime - s) / 1e6
   }
 
   def concurrent_demo(): Unit = {
