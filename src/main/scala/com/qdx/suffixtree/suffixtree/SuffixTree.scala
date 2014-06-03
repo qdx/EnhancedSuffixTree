@@ -30,7 +30,7 @@ class SuffixTree[T] extends Logger {
 
   def get_height(): Int = {
     if (repeated.isDefined) repeated.get.get_height() + 1
-    else 0
+    else 1
   }
 
   def batch_input(l: Iterable[T]): Unit = l.foreach((i: T) => insert(i))
@@ -82,7 +82,7 @@ class SuffixTree[T] extends Logger {
         loop_flag = remainder_index < sequence.length - 1
         remainder_index += 1
         if (repeated.isDefined) {
-          repeated.get.slide()
+          repeated.get.delete_head()
           if (repeated.get.sequence.length == 0) repeated = None
         }
       }
@@ -226,6 +226,7 @@ class SuffixTree[T] extends Logger {
     //    debug(sb.toString())
     debug("Active Point(" + id_map(ap.node) + ", " + ap.edge_head + ", " + ap.length + ")")
     debug(sequence.mkString)
+    if(repeated.isDefined) sb.append(">>>>\n recursive:" + repeated.get.show())
     sb.toString()
   }
 
@@ -258,12 +259,12 @@ class SuffixTree[T] extends Logger {
   def set_slide_size(size: Int): Unit = slide_size = size
 
   def slide(): Unit = {
-    while(window_size > 0 && sequence.length > window_size + slide_size){
-      Range(0, slide_size).foreach(_ => slide_one())
+    while(window_size > 0 && sequence.length >= window_size + slide_size){
+      Range(0, slide_size).foreach(_ => delete_head())
     }
   }
 
-  private def slide_one(): Unit = {
+  def delete_head(): Unit = {
     if (leaves.size == 0) return
     // find the leaf node that represents the suffix we are deleting
     val n = leaves.head.get
@@ -273,7 +274,7 @@ class SuffixTree[T] extends Logger {
     val e = n.from_edge.get
 
     debug(n.from_edge.get.get_label_seq(sequence, window_head).mkString(","))
-    if (np.edges.size == 1 && np.type_ == Node.ROOT) {
+    if (sequence.length == 1 && np.type_ == Node.ROOT) {
       sequence.clear()
       leaves.clear()
       window_head = 0: BigInt
@@ -293,6 +294,7 @@ class SuffixTree[T] extends Logger {
         leaves(remainder_index) = Some(n)
         bubble_up_label_change(np, e.label.start)
         move_active_point_after_split()
+        repeated.get.delete_head()
       } else {
         // we don't need to insert any suffix, but we do need to remove the leaf we are looking at
         if (np.edges.size == 2 && np.type_ != Node.ROOT) {

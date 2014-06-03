@@ -3,11 +3,11 @@ import com.qdx.suffixtree.suffixtree.Node
 import com.qdx.debugging.Logger
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
-import scala.collection.mutable.ArrayBuffer
 
 object SuffixTreeTest extends Properties("Suffix Tree Properties") {
 
   val alphabet = Gen.choose('a', 'z')
+  val window = Gen.choose(2, 10)
   val aTozString = for {
     size <- Gen.choose(20, 50)
     s <- Gen.listOfN(size, alphabet)
@@ -66,25 +66,29 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
       val st_compare = new SuffixTree[Char]
       st_compare.batch_input(s slice(i, s.length))
       val result = st.equals(st_compare)
-      st.slide()
+      st.delete_head()
       result
     })
   }
 
   property("slidingWindow") = forAll(aTozString) { s: String =>
-    val window_size = s.length / 2
-    val sliding_tree = new SuffixTree[Char]
-    val test_buffer = new ArrayBuffer[Char]
-    sliding_tree.window_size = window_size
-    Range(0, s.length).forall(i => {
-      val st = new SuffixTree[Char]
-      val begin = if (i >= window_size) i + 1 - window_size else 0
-      val s1 = s slice(begin, i + 1)
-      test_buffer.append(s(i))
-      while(test_buffer.length > window_size) test_buffer.remove(0)
-      st.batch_input(s slice(begin, i + 1))
-      sliding_tree.insert(s(i))
-      st.equals(sliding_tree)
-    })
+    val window_size = s.length / window.sample.get + 1
+    val sliding_window = new SuffixTree[Char]
+    sliding_window.window_size = window_size
+    sliding_window.slide_size = window_size / 3 + 1
+    sliding_window.batch_input(s slice(0, window_size))
+    var loop_flag = true
+    var i = window_size
+    while (loop_flag && i < s.length) {
+      val t = i - window_size
+      if(t != 0 && t % sliding_window.slide_size == 0){
+        val compare = new SuffixTree[Char]
+        compare.batch_input(s slice(i - window_size, i))
+        loop_flag = compare.equals(sliding_window)
+      }
+      sliding_window.insert(s(i))
+      i += 1
+    }
+    loop_flag
   }
 }
