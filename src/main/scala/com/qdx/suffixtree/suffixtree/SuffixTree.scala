@@ -258,7 +258,7 @@ class SuffixTree[T] extends Logger {
   def set_slide_size(size: Int): Unit = slide_size = size
 
   def slide(): Unit = {
-    while(sequence.length > window_size + slide_size){
+    while(window_size > 0 && sequence.length > window_size + slide_size){
       Range(0, slide_size).foreach(_ => slide_one())
     }
   }
