@@ -8,9 +8,10 @@ import com.qdx.suffixtree.regex.Pattern
 import com.qdx.stream.automaton._
 import scala.util.matching.Regex
 import scala.concurrent.duration._
-import java.io.File
 import akka.actor.{Props, ActorSystem}
 import scala.collection.mutable.ArrayBuffer
+import java.io.FileWriter
+import objectexplorer.ObjectGraphMeasurer
 
 object MainEntry extends App {
 
@@ -20,12 +21,22 @@ object MainEntry extends App {
   //  exact_path_search_test()
   //  special_suffix_tree_tests()
   //  manual_test_suffix_tree("abcabxabcd", '#')
-//      regex_search_test()
+  //  regex_search_test()
+
+
+  val result = time_to_build_tree(1000)
+//  val fw = new FileWriter("classic_suffix_tree_build_time.txt", true)
+//  try {
+//    fw.write(result)
+//  }
+//  finally {
+//    fw.close()
+//  }
 
 //    concurrent_demo()
-  sliding_pattern_search()
-
-//  recursive_pattern_search_test()
+  //  val tree = new SuffixTree[Char]
+  //  tree.batch_input("dedododeeodo")
+  //  println(tree.show())
 
   def recursive_pattern_search_test(): Unit = {
     val str = "this is a pattern seen before, a pattern"
@@ -68,6 +79,28 @@ object MainEntry extends App {
       println(st.show(label_as_item = false))
       result
     })
+  }
+
+  def time_to_build_tree(interval: Int): String = {
+    val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString
+    val result = new StringBuilder()
+    result.append("{")
+    for (i <- Range(0, 5)) {
+      val input = target.slice(0, i * interval) + "~"
+      val st = new SuffixTree[Char]
+      val t_measure = time(st.batch_input(input))
+      result.append(s"{${i * interval}, $t_measure},")
+      println(s"testing input length: ${i * interval}")
+
+    }
+    result.append("}")
+    result.toString()
+  }
+
+  def time[A](f: => A) = {
+    val s = System.nanoTime
+    f
+    (System.nanoTime - s) / 1e6
   }
 
   def concurrent_demo(): Unit = {
