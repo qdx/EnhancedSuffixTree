@@ -145,18 +145,20 @@ class Pattern(p: String) extends Logger {
     if (n.type_ == Node.LEAF_NODE) {
       if (previous_accept_length > 0) result.append((n.search_index_ - t.window_head, l))
     } else {
-      for ((k, v) <- n.edges) {
+      val tos = out_transitions(s)
+      val edges = new m.HashSet[Edge[Char]]()
+      if(n.edges.contains(Pattern.ANY)) edges ++= n.edges.values
+      else tos.foreach(t => {
+        if(n.edges.contains(t)) edges += n.edges(t)
+      })
+      for (v <- edges) {
         val label = v.get_label_seq(t.sequence, t.window_head)
-        debug("searching label:" + label)
         // ALTERNATE: there should be a better way to unpack the returned results
         val match_str = match_string(label.mkString, s)
         val match_count = match_str._1
         val match_state = match_str._2
         val accept_count = match_str._3
         val previous_accept_state = match_str._4
-        debug("matched: " + match_count)
-        debug("accepted: " + accept_count)
-        debug("previous is:" + previous_accept_state.size)
 
         // only when match_count == label.length && the recursive search result is
         // not empty we will discard previous accept state
@@ -164,7 +166,6 @@ class Pattern(p: String) extends Logger {
           if (match_count == label.length) {
             val accept_length = if (accept_count > 0) l + accept_count else previous_accept_length
             val r = search_pattern_routine(match_state, t, v.to, l + match_count, accept_length)
-            debug("recur search result size: " + r.size)
             if (r.size > 0) Some(r)
             else None
           }
@@ -173,7 +174,6 @@ class Pattern(p: String) extends Logger {
         recur_search_result match {
           case Some(r) => result ++= r
           case None =>
-            debug("after recur 0 size, previous is:" + previous_accept_state.size)
             if (previous_accept_state.size > 0 || previous_accept_length > 0)
               t.breadth_first_traverse(v.to)
                 .filter(n => n.type_ == Node.LEAF_NODE)
@@ -461,5 +461,11 @@ class Pattern(p: String) extends Logger {
       }
     }
     result
+  }
+
+  private def out_transitions(states: m.HashSet[State]): m.HashSet[Char] = {
+    val tos = new m.HashSet[Char]
+    states.foreach(ss => tos ++= ss.to.keySet)
+    tos
   }
 }
