@@ -11,20 +11,22 @@ import scala.util.matching.Regex
 import scala.concurrent.duration._
 import akka.actor.{Props, ActorSystem}
 import scala.collection.mutable.ArrayBuffer
-import java.io.FileWriter
+import objectexplorer.ObjectGraphMeasurer
 
 object MainEntry extends App {
 
+  Experiments.reuters_dataset()
 
-    val result = time_to_build_tree(1000)
+  //  val result = time_to_build_tree(1000)
 
-//    val st = new SuffixTree[Char]
-//    val target = io.Source.fromURL(getClass.getResource("/small.txt")).mkString
-//    val average_depth =  target.map(c => {
-//      st.insert(c)
-//      st.get_height()
-//    }).sum.toDouble / target.length.toDouble
-//    println(average_depth)
+
+  //    val st = new SuffixTree[Char]
+  //    val target = io.Source.fromURL(getClass.getResource("/small.txt")).mkString
+  //    val average_depth =  target.map(c => {
+  //      st.insert(c)
+  //      st.get_height()
+  //    }).sum.toDouble / target.length.toDouble
+  //    println(average_depth)
 
   /*
   val interval = 1000
@@ -52,15 +54,6 @@ object MainEntry extends App {
 //  result(2).append("}")
 */
 
-  val fw = new FileWriter("bottleneck.txt", true)
-  try {
-    fw.write(result + "\n")
-//    fw.write(result(1).toString() + "\n")
-//    fw.write(result(2).toString() + "\n")
-  }
-  finally {
-    fw.close()
-  }
 
   def recursive_pattern_search_test(): Unit = {
     val str = "this is a pattern seen before, a pattern"
@@ -105,20 +98,6 @@ object MainEntry extends App {
     })
   }
 
-  def time_to_build_tree(interval: Int): String = {
-    val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString
-    val result = new StringBuilder()
-    result.append("{")
-    for (i <- Range(1, 800)) {
-      val input = target.slice(0, i * interval) + "~"
-      val st = new SuffixTree[Char]
-      val t_measure = Timing.time(st.batch_input(input))
-      result.append(s"{${i*interval}, $t_measure},")
-      println(s"testing input length: ${i * interval}")
-    }
-    result.append("}")
-    result.toString()
-  }
 
   def concurrent_demo(): Unit = {
     val system = ActorSystem("SuffixTree")
