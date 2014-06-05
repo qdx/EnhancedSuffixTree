@@ -147,7 +147,7 @@ class Pattern(p: String) extends Logger {
     } else {
       val tos = out_transitions(s)
       val edges = new m.HashSet[Edge[Char]]()
-      if(n.edges.contains(Pattern.ANY)) edges ++= n.edges.values
+      if(tos.contains(Pattern.ANY)) edges ++= n.edges.values
       else tos.foreach(t => {
         if(n.edges.contains(t)) edges += n.edges(t)
       })
@@ -306,10 +306,7 @@ class Pattern(p: String) extends Logger {
           case '.' => nfa_dot(stack)
           case '\\' => Unit
           case Pattern.CONCAT => nfa_concat(stack)
-          case _ =>
-            if (!Pattern.LITERAL_SET.contains(re(i)))
-              error("char not in the literal detected")
-            nfa_char(re(i), stack)
+          case _ => nfa_char(re(i), stack)
         }
       }
     }
