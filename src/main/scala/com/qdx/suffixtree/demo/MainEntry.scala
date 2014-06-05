@@ -10,12 +10,35 @@ import com.qdx.suffixtree.experiments._
 import scala.util.matching.Regex
 import scala.concurrent.duration._
 import akka.actor.{Props, ActorSystem}
-import scala.collection.mutable.ArrayBuffer
-import objectexplorer.ObjectGraphMeasurer
+import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 
 object MainEntry extends App {
 
-  Experiments.reuters_dataset()
+  //  Experiments.denews_dataset()
+  Experiments.execute_all_experiments()
+//  val size = 1000000
+//  val interval = 1000
+//  val test1 = new ArrayBuffer[Int]()
+//  val test2 = new ArrayBuffer[Char]()
+//  0 until size foreach (d => test1.append(d))
+//  0 until size foreach (d => test2.append((d/10000).toChar))
+//  val sb = new StringBuilder()
+//  sb.append("{")
+//  0 until size foreach (i => {
+//    if(i % interval == 0) {
+//      sb.append(s"{${test1.length}, ${Timing.time({
+//        test1.remove(0)
+//        test2.remove(0)
+//      })}}, ")
+//    }
+//    else{
+//      test1.remove(0)
+//      test2.remove(0)
+//    }
+//  })
+//  sb.append("}")
+//  WriteResult.write_to("find_arraybuffer_remove.txt", sb.toString(), "Arraybuffer remove from head cost:")
+
 
   //  val result = time_to_build_tree(1000)
 
