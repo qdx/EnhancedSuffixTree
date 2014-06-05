@@ -90,9 +90,9 @@ class SuffixTree[T] extends Logger {
           }
       }
       queue ++= add_queue
-      for (i <- Range(0, s)) {
+      0 until s foreach(i => {
         queue.dequeue()
-      }
+      })
     }
     result
   }
@@ -194,7 +194,7 @@ class SuffixTree[T] extends Logger {
       }
       debug("Queue: " + queue.map((t: Node[T]) => id_map(t)).mkString(", "))
       queue ++= add_queue
-      Range(0, s).foreach(i => queue.dequeue())
+      0 until s foreach(i => queue.dequeue())
     }
 
     sb.append("edge [color=red]\n")
@@ -242,7 +242,7 @@ class SuffixTree[T] extends Logger {
 
   def slide(): Unit = {
     while(window_size > 0 && sequence.length >= window_size + slide_size){
-      Range(0, slide_size).foreach(_ => delete_head())
+      0 until slide_size foreach(_ => delete_head())
     }
   }
 
