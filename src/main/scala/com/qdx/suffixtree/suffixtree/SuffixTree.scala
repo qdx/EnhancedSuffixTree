@@ -3,6 +3,7 @@ package com.qdx.suffixtree.suffixtree
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{mutable => m}
 import com.qdx.debugging.Logger
+import com.qdx.suffixtree.experiments.Timing
 
 object SuffixTree {
   val SEQ_END = BigInt(-1)
@@ -90,7 +91,7 @@ class SuffixTree[T] extends Logger {
           }
       }
       queue ++= add_queue
-      0 until s foreach(i => {
+      0 until s foreach (i => {
         queue.dequeue()
       })
     }
@@ -172,7 +173,7 @@ class SuffixTree[T] extends Logger {
           sb.append(id_map(n)).append(" -> ").append(id_map(e.to)).append(" [label=\"")
           // getting the label of edge
 
-          val label_index = s"(${e.label.start}, ${e.label.end}})"
+          val label_index = s"(${e.label.start}, ${e.label.end})"
           val label =
             if (label_as_item) e.get_label_seq(sequence, window_head).mkString
             else e.get_label_seq(sequence, window_head).mkString + label_index
@@ -194,7 +195,7 @@ class SuffixTree[T] extends Logger {
       }
       debug("Queue: " + queue.map((t: Node[T]) => id_map(t)).mkString(", "))
       queue ++= add_queue
-      0 until s foreach(i => queue.dequeue())
+      0 until s foreach (i => queue.dequeue())
     }
 
     sb.append("edge [color=red]\n")
@@ -208,7 +209,7 @@ class SuffixTree[T] extends Logger {
     //    debug(sb.toString())
     debug("Active Point(" + id_map(ap.node) + ", " + ap.edge_head + ", " + ap.length + ")")
     debug(sequence.mkString)
-    if(repeated.isDefined) sb.append(">>>>\n recursive:" + repeated.get.show())
+    if (repeated.isDefined) sb.append(">>>>\n recursive:" + repeated.get.show(label_as_item=false))
     sb.toString()
   }
 
@@ -241,13 +242,13 @@ class SuffixTree[T] extends Logger {
   def set_slide_size(size: Int): Unit = slide_size = size
 
   def slide(): Unit = {
-    while(window_size > 0 && sequence.length >= window_size + slide_size){
-      0 until slide_size foreach(_ => delete_head())
+    while (window_size > 0 && sequence.length >= window_size + slide_size) {
+      0 until slide_size map(_ => delete_head())
     }
   }
 
-  def delete_head(): Unit = {
-    if (leaves.size == 0) return
+  def delete_head(): (Double, Double) = {
+    if (leaves.size == 0) return (0.0, 0.0)
     // find the leaf node that represents the suffix we are deleting
     val n = leaves.head.get
     // find the parent of that leaf node
@@ -256,73 +257,83 @@ class SuffixTree[T] extends Logger {
     val e = n.from_edge.get
 
     if (sequence.length == 1 && np.type_ == Node.ROOT) {
-      sequence.clear()
-      leaves.clear()
-      window_head = 0: BigInt
-      window_size = 0: Int
-      root.edges.clear()
-      ap = new ActivePoint[T](root, None, 0)
-      remainder_index = 0: Int
-      previous_inserted_node = None: Option[Node[T]]
-      repeated = None: Option[SuffixTree[T]]
+      val t1 = Timing.time({
+        sequence.clear()
+        leaves.clear()
+      })
+      val t2 = Timing.time({
+        window_head = 0: BigInt
+        window_size = 0: Int
+        root.edges.clear()
+        ap = new ActivePoint[T](root, None, 0)
+        remainder_index = 0: Int
+        previous_inserted_node = None: Option[Node[T]]
+        repeated = None: Option[SuffixTree[T]]
+      })
+      (t2, t1)
     } else {
-      if (ap.node.equals(np) && ap.edge_head.isDefined && ap.get_edge().equals(n.from_edge)) {
-        // when ap is on the edge that is leading to the leaf node we are looking at, we need to
-        // insert the suffix indicated by remainder index
-        // here the start of e.label should be(read like a tree):
-        //                                  the length of already matched characters
-        //               edge start position in current seq -  suffix start pos in current seq
-        // remainder_index + ((e.label.start - window_head) - (n.search_index_ - window_head)) + window_head
-        // and can be simplified to: remainder_index + e.label.start since n.search_index_ - window_head is
-        // always 0. This is safe because we are deleting from the head
-        e.label = new Label((remainder_index + e.label.start).toInt, e.label.end)
-        n.search_index_ = remainder_index + window_head
-        leaves(remainder_index) = Some(n)
-        bubble_up_label_change(np, e.label.start)
-        move_active_point_after_split()
-        repeated.get.delete_head()
-      } else {
-        // we don't need to insert any suffix, but we do need to remove the leaf we are looking at
-        if (np.edges.size == 2 && np.type_ != Node.ROOT) {
-
-          // get the other node
-          val other_edge_head = (np.edges.keySet - get_item(n.from_edge.get.label.start)).head
-          val o = np.edges(other_edge_head).to
-          val npp = np.get_parent_node().get
-          // in this case we need to merge edges
-          // to make it clearer, here is a graph:
-          // -------> npp --------------------------------> np --------> n (we need to remove this leaf)
-          //           \ we don't care about this subtree    \---------> o (we don't care about this subtree)
-          // after the operation, we want it to look like
-          // -------> npp -------------> o (we don't care)
-          //           \ we don't care
-          if (ap.node.equals(np)) {
-            // when ap is in the subtree we are manipulating, we have to move ap to the correct position
-            ap.node = npp
-            ap.edge_head = Some(get_item(np.from_edge.get.label.start))
-            ap.length = np.from_edge.get.length(sequence.length, window_head) + ap.length
-          }
-          bubble_up_label_change(np, o.from_edge.get.label.start)
-          val np_edge = np.from_edge.get
-          // merging edges
-          np_edge.label = new Label(np_edge.label.start, o.from_edge.get.label.end)
-          np_edge.to = o
-          o.from_edge = np.from_edge
-        } else if (np.edges.size >= 2 || np.type_ == Node.ROOT) {
-          // in this case, we just need to remove the leaf and it's from edge
-          np.edges.remove(get_item(n.from_edge.get.label.start))
-          bubble_up_label_change(np, np.edges.values.head.label.start)
+      val t1 = Timing.time({
+        if (ap.node.equals(np) && ap.edge_head.isDefined && ap.get_edge().equals(n.from_edge)) {
+          // when ap is on the edge that is leading to the leaf node we are looking at, we need to
+          // insert the suffix indicated by remainder index
+          // here the start of e.label should be(read like a tree):
+          //                                  the length of already matched characters
+          //               edge start position in current seq -  suffix start pos in current seq
+          // remainder_index + ((e.label.start - window_head) - (n.search_index_ - window_head)) + window_head
+          // and can be simplified to: remainder_index + e.label.start since n.search_index_ - window_head is
+          // always 0. This is safe because we are deleting from the head
+          e.label = new Label((remainder_index + e.label.start).toInt, e.label.end)
+          n.search_index_ = remainder_index + window_head
+          leaves(remainder_index) = Some(n)
+          bubble_up_label_change(np, e.label.start)
+          move_active_point_after_split()
+          repeated.get.delete_head()
         } else {
-          // any internal node should have at least 2 edges, in this branch this is violated
-          throw new InternalNodeNumOfChildrenException
+          // we don't need to insert any suffix, but we do need to remove the leaf we are looking at
+          if (np.edges.size == 2 && np.type_ != Node.ROOT) {
+
+            // get the other node
+            val other_edge_head = (np.edges.keySet - get_item(n.from_edge.get.label.start)).head
+            val o = np.edges(other_edge_head).to
+            val npp = np.get_parent_node().get
+            // in this case we need to merge edges
+            // to make it clearer, here is a graph:
+            // -------> npp --------------------------------> np --------> n (we need to remove this leaf)
+            //           \ we don't care about this subtree    \---------> o (we don't care about this subtree)
+            // after the operation, we want it to look like
+            // -------> npp -------------> o (we don't care)
+            //           \ we don't care
+            if (ap.node.equals(np)) {
+              // when ap is in the subtree we are manipulating, we have to move ap to the correct position
+              ap.node = npp
+              ap.edge_head = Some(get_item(np.from_edge.get.label.start))
+              ap.length = np.from_edge.get.length(sequence.length, window_head) + ap.length
+            }
+            bubble_up_label_change(np, o.from_edge.get.label.start)
+            val np_edge = np.from_edge.get
+            // merging edges
+            np_edge.label = new Label(np_edge.label.start, o.from_edge.get.label.end)
+            np_edge.to = o
+            o.from_edge = np.from_edge
+          } else if (np.edges.size >= 2 || np.type_ == Node.ROOT) {
+            // in this case, we just need to remove the leaf and it's from edge
+            np.edges.remove(get_item(n.from_edge.get.label.start))
+            bubble_up_label_change(np, np.edges.values.head.label.start)
+          } else {
+            // any internal node should have at least 2 edges, in this branch this is violated
+            throw new InternalNodeNumOfChildrenException
+          }
+          // since we have slided the sequence backwards, in order to keep remainder index at the right place,
+          // we need to slide it backwards too.
+          remainder_index -= 1
         }
-        // since we have slided the sequence backwards, in order to keep remainder index at the right place,
-        // we need to slide it backwards too.
-        remainder_index -= 1
-      }
-      sequence.remove(0)
-      leaves.remove(0)
-      window_head += 1
+      })
+      val t2 = Timing.time({
+        sequence.remove(0)
+        leaves.remove(0)
+        window_head += 1
+      })
+      (t1, t2)
     }
   }
 

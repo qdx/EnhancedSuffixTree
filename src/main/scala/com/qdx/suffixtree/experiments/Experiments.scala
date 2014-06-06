@@ -9,7 +9,8 @@ object Experiments {
 
   def execute_all_experiments(): Unit = {
 
-    different_pattern_match("summaTheologica.txt")
+    test_time_breakup_of_delete()
+//    different_pattern_match("summaTheologica.txt")
     //    time_to_BFS()
     //    val number = "[0|1|2|3|4|5|6|7|8|9]+"
     //    denews_pattern_match(3000, number)
@@ -40,6 +41,35 @@ object Experiments {
     //    time_to_build_tree("howto", 1000000, 1000)
     //    println()
 
+  }
+
+  def test_time_breakup_of_delete(): Unit = {
+    val input = io.Source.fromURL(getClass.getResource("/howto"))("latin1").mkString slice(0, 1000000)
+    val st = new SuffixTree[Char]
+    st.batch_input(input)
+    val sb1 = new StringBuilder()
+    val sb2 = new StringBuilder()
+    sb1.append("{")
+    sb2.append("{")
+    val ab1 = new ArrayBuffer[(Int, Double)]()
+    val ab2 = new ArrayBuffer[(Int, Double)]()
+    0 until input.length foreach(i => {
+      val time = st.delete_head()
+      if(i % 1000 == 0) {
+        ab1.append((input.length - i, time._1))
+        ab2.append((input.length - i, time._2))
+      }
+    })
+    ab1.sorted.foreach(d => {
+      sb1.append(s"{${d._1}, ${d._2}}, ")
+    })
+    ab2.sorted.foreach(d => {
+      sb2.append(s"{${d._1}, ${d._2}}, ")
+    })
+    sb1.append("}")
+    sb2.append("}")
+    WriteResult.write_to("breakup_delete_head.txt", sb1.toString(), "A breakuped time of delete head log:")
+    WriteResult.write_to("breakup_delete_head.txt", sb2.toString(), "A breakuped time of delete head n:")
   }
 
   def time_to_BFS(): Unit = {

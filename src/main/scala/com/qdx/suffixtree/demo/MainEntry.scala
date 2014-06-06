@@ -14,8 +14,24 @@ import scala.collection.mutable.{ListBuffer, ArrayBuffer}
 
 object MainEntry extends App {
 
+//  val p = "(a|.b)"
+//  val pattern = new Pattern(p)
+
+  val st = new SuffixTree[Char]()
+  st.batch_input("banana$ananan")
+  println(st.show(label_as_item = false))
+//  val st = new SuffixTree[Char]()
+//  val input = "dedododeeodo"
+//  st.batch_input(input)
+//  input.foreach(_ => {
+//    st.delete_head()
+//    println(st.show(label_as_item = false))
+//  })
+//  concurrent_demo()
+
+
   //  Experiments.denews_dataset()
-  Experiments.execute_all_experiments()
+//  Experiments.execute_all_experiments()
 //  val size = 1000000
 //  val interval = 1000
 //  val test1 = new ArrayBuffer[Int]()
