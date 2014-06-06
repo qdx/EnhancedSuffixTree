@@ -269,7 +269,13 @@ class SuffixTree[T] extends Logger {
       if (ap.node.equals(np) && ap.edge_head.isDefined && ap.get_edge().equals(n.from_edge)) {
         // when ap is on the edge that is leading to the leaf node we are looking at, we need to
         // insert the suffix indicated by remainder index
-        e.label = new Label((remainder_index + (e.label.start - (n.search_index_ - window_head))).toInt, e.label.end)
+        // here the start of e.label should be(read like a tree):
+        //                                  the length of already matched characters
+        //               edge start position in current seq -  suffix start pos in current seq
+        // remainder_index + ((e.label.start - window_head) - (n.search_index_ - window_head)) + window_head
+        // and can be simplified to: remainder_index + e.label.start since n.search_index_ - window_head is
+        // always 0. This is safe because we are deleting from the head
+        e.label = new Label((remainder_index + e.label.start).toInt, e.label.end)
         n.search_index_ = remainder_index + window_head
         leaves(remainder_index) = Some(n)
         bubble_up_label_change(np, e.label.start)
