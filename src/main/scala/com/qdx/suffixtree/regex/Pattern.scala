@@ -112,10 +112,18 @@ class Pattern(p: String) extends Logger {
     }
     if(t.repeated.isDefined && t.repeated.get.sequence.length > 0){
       val repeated_suffix_search = search_pattern(t.repeated.get)
-      long_result ++= repeated_suffix_search.map(i => (i._1 + t.remainder_index, i._2))
+      val recur_result =  repeated_suffix_search.map(i => (i._1 + t.remainder_index, i._2))
+      if(long_result.nonEmpty) {
+        val max_end = long_result.map(t => t._1 + t._2).max
+        long_result ++= recur_result.filter(t => t._1 + t._2 > max_end)
+      } else{
+        long_result ++= recur_result
+      }
     }
     val short_result = eliminate_suffixes(long_result)
     short_result
+//    if(dfa.isDefined) println(show(dfa.get))
+//    long_result
   }
 
   private def eliminate_suffixes(result: ArrayBuffer[(BigInt, Int)]): ArrayBuffer[(BigInt, Int)] = {
@@ -143,7 +151,7 @@ class Pattern(p: String) extends Logger {
                                      previous_accept_length: Int): ArrayBuffer[(BigInt, Int)] = {
     val result = new ArrayBuffer[(BigInt, Int)]()
     if (n.type_ == Node.LEAF_NODE) {
-      if (previous_accept_length > 0) result.append((n.search_index_ - t.window_head, l))
+      if (previous_accept_length > 0 && previous_accept_length == l) result.append((n.search_index_ - t.window_head, l))
     } else {
       val tos = out_transitions(s)
       val edges = new m.HashSet[Edge[Char]]()
@@ -215,12 +223,12 @@ class Pattern(p: String) extends Logger {
     (c_flag, a_flag) match {
       case (false, false) => Unit
       case (false, true) =>
-        s.foreach(s => result ++= s.to(Pattern.ANY))
+        s.filter(i => i.to.contains(Pattern.ANY)).foreach(k => result ++= k.to(Pattern.ANY))
       case (true, false) =>
-        s.foreach(s => result ++= s.to(c))
+        s.filter(i => i.to.contains(c)).foreach(k => result ++= k.to(c))
       case (true, true) =>
-        s.foreach(s => result ++= s.to(Pattern.ANY))
-        s.foreach(s => result ++= s.to(c))
+        s.filter(i => i.to.contains(Pattern.ANY)).foreach(k => result ++= k.to(Pattern.ANY))
+        s.filter(i => i.to.contains(c)).foreach(k => result ++= k.to(c))
     }
     result
   }
@@ -237,58 +245,106 @@ class Pattern(p: String) extends Logger {
   private def add_explicit_concat(re: String): String = {
     val result = new m.StringBuilder()
     var prev = None: Option[Char]
+    var escape = false
+    val escaped = new m.Queue[Char]()
     for (c <- re) {
-      val p = prev.getOrElse()
-      if (prev.isEmpty
-        || p == '('
-        || p == '\\'
-        || Pattern.BINARY_OPERATOR.contains(p)
-        || c == ')'
-        || (Pattern.OPERATOR_PRECEDENCE.contains(c) && c != '(' && c != '.' && c != '\\')) {
-        result.append(c)
-      } else {
-        result.append(Pattern.CONCAT + "" + c)
+      if(escape){
+        escaped.enqueue(c)
+        val p = prev.getOrElse()
+        if (prev.isEmpty || p == '(' || p == '\\' || Pattern.BINARY_OPERATOR.contains(p) ) {
+          result.append(Pattern.EPSILON)
+        } else {
+          result.append(Pattern.CONCAT + "" + Pattern.EPSILON)
+        }
+        prev = Some(Pattern.EPSILON)
+        escape = false
+      }else {
+        val p = prev.getOrElse()
+        if(c == '\\'){
+          escape = true
+        }else if(prev.isEmpty
+          || p == '('
+          || Pattern.BINARY_OPERATOR.contains(p)
+          || c == ')'
+          || (Pattern.OPERATOR_PRECEDENCE.contains(c) && c != '(' && c != '.')) {
+          result.append(c)
+        } else {
+          result.append(Pattern.CONCAT + "" + c)
+        }
+        if(!escape) prev = Some(c)
       }
-      prev = Some(c)
     }
-    result.toString()
+    val escaped_result = new ArrayBuffer[Char]()
+    for(c <- result){
+      if(c == Pattern.EPSILON){
+        val e = escaped.dequeue()
+        escaped_result.append('\\')
+        escaped_result.append(e)
+      }else{
+        escaped_result.append(c)
+      }
+    }
+    escaped_result.mkString
   }
 
   // standard stack to postfix approach
   private def infix_to_postfix(postfix_re: String): String = {
     val stack = new m.Stack[Char]()
     val result = new m.StringBuilder()
+    var escape = false
+    val escaped = new m.Queue[Char]()
     for (c <- postfix_re) {
-      c match {
-        case '(' => stack.push(c)
-        case ')' =>
-          while (stack.top != '(') result.append(stack.pop())
-          stack.pop()
-        case _ =>
-          while (!stack.isEmpty && Pattern.get_precedence(stack.top) > Pattern.get_precedence(c)) {
-            result.append(stack.pop())
-          }
-          stack.push(c)
+      if(escape){
+        escaped.enqueue(c)
+        while (stack.nonEmpty && (Pattern.get_precedence(stack.top) > Pattern.get_precedence(Pattern.EPSILON))) {
+          result.append(stack.pop())
+        }
+        stack.push(Pattern.EPSILON)
+        escape = false
+      }else {
+        c match {
+          case '(' => stack.push(c)
+          case ')' =>
+            while (stack.top != '(') result.append(stack.pop())
+            stack.pop()
+          case '\\' => escape = true
+          case _ =>
+            while (stack.nonEmpty && (Pattern.get_precedence(stack.top) > Pattern.get_precedence(c))) {
+              result.append(stack.pop())
+            }
+            stack.push(c)
+        }
       }
     }
     while (stack.nonEmpty) result.append(stack.pop())
+    val escaped_str = new ArrayBuffer[Char]()
+    for(c <- result){
+      if(c == Pattern.EPSILON){
+        val e = escaped.dequeue()
+        escaped_str.append('\\')
+        escaped_str.append(e)
+      }else{
+        escaped_str.append(c)
+      }
+    }
 
     // ALTERNATE: refactor this into a method
     // the following is to swap the \ and any character after it in the postfix expression
-    val swap_escape = result.toString().toCharArray
-    var skip = false
-    for (i <- Range(0, swap_escape.length - 1)) {
-      if (!skip) {
-        if (swap_escape(i) == '\\') {
-          swap_escape(i) = swap_escape(i + 1)
-          swap_escape(i + 1) = '\\'
-          skip = true
-        }
-      } else {
-        skip = false
-      }
-    }
-    swap_escape.mkString
+//    val swap_escape = result.toString().toCharArray
+//    var skip = false
+//    for (i <- Range(0, swap_escape.length - 1)) {
+//      if (!skip) {
+//        if (swap_escape(i) == '\\') {
+//          swap_escape(i) = swap_escape(i + 1)
+//          swap_escape(i + 1) = '\\'
+//          skip = true
+//        }
+//      } else {
+//        skip = false
+//      }
+//    }
+//    swap_escape.mkString
+    escaped_str.mkString
   }
 
   // McMaughton-Yamada-Thompson algorithm which transform postfix regex into nfa
