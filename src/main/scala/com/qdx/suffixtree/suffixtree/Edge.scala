@@ -6,7 +6,6 @@ case class Label(start: BigInt, end: BigInt)
 
 class Edge[T](start: BigInt, end: BigInt, from_node: Node[T], to_node: Node[T]) {
   // includes end
-  // TODO: change all label into (BigInt, BigInt)
   var label = new Label(start, end)
   var to = to_node
   var from = from_node

@@ -17,6 +17,8 @@ import java.io.{PrintWriter, FileWriter, File}
 import java.awt.Desktop
 
 object MainEntry extends App {
+  //TODO 1: consider enabling the tree to be configured into both single linked or double linked
+  //TODO 2: implement the data structure that can enable log time delete
   val demo_file_path = "d:/suffixtree_demo/"
   /*
   val gv = new GraphViz()
