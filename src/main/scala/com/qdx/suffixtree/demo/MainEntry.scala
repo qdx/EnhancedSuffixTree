@@ -1,98 +1,53 @@
 package com.qdx.suffixtree.demo
 
+import scala.util.matching.Regex
 import scala.collection.{mutable => m}
-import scala.util.Random
+import scala.concurrent.duration._
+import scala.collection.mutable.ArrayBuffer
+
+import akka.actor.{Props, ActorSystem}
+
 import com.qdx.suffixtree.suffixtree.{SuffixTreeActor, SuffixTree, Node}
 import com.qdx.debugging.Logger
 import com.qdx.suffixtree.regex.Pattern
-import com.qdx.stream.automaton._
 import com.qdx.suffixtree.experiments._
-import scala.util.matching.Regex
-import scala.concurrent.duration._
-import akka.actor.{Props, ActorSystem}
-import scala.collection.mutable.{ListBuffer, ArrayBuffer}
+
+import com.github.jabbalaci.graphviz._
+import java.io.{PrintWriter, FileWriter, File}
+import java.awt.Desktop
 
 object MainEntry extends App {
-
-//  val p = "(a|.b)"
-//  val pattern = new Pattern(p)
-
-  val st = new SuffixTree[Char]()
-  st.batch_input("banana$ananan")
-  println(st.show(label_as_item = false))
-//  val st = new SuffixTree[Char]()
-//  val input = "dedododeeodo"
-//  st.batch_input(input)
-//  input.foreach(_ => {
-//    st.delete_head()
-//    println(st.show(label_as_item = false))
-//  })
-//  concurrent_demo()
-
-
-  //  Experiments.denews_dataset()
-//  Experiments.execute_all_experiments()
-//  val size = 1000000
-//  val interval = 1000
-//  val test1 = new ArrayBuffer[Int]()
-//  val test2 = new ArrayBuffer[Char]()
-//  0 until size foreach (d => test1.append(d))
-//  0 until size foreach (d => test2.append((d/10000).toChar))
-//  val sb = new StringBuilder()
-//  sb.append("{")
-//  0 until size foreach (i => {
-//    if(i % interval == 0) {
-//      sb.append(s"{${test1.length}, ${Timing.time({
-//        test1.remove(0)
-//        test2.remove(0)
-//      })}}, ")
-//    }
-//    else{
-//      test1.remove(0)
-//      test2.remove(0)
-//    }
-//  })
-//  sb.append("}")
-//  WriteResult.write_to("find_arraybuffer_remove.txt", sb.toString(), "Arraybuffer remove from head cost:")
-
-
-  //  val result = time_to_build_tree(1000)
-
-
-  //    val st = new SuffixTree[Char]
-  //    val target = io.Source.fromURL(getClass.getResource("/small.txt")).mkString
-  //    val average_depth =  target.map(c => {
-  //      st.insert(c)
-  //      st.get_height()
-  //    }).sum.toDouble / target.length.toDouble
-  //    println(average_depth)
-
+  val demo_file_path = "d:/suffixtree_demo/"
   /*
-  val interval = 1000
-  val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString
-  val result = new ArrayBuffer[StringBuilder]()
-  result.append(new StringBuilder())
-//  result.append(new StringBuilder())
-//  result.append(new StringBuilder())
-  result(0).append("\n{")
-  for (i <- Range(1, 2)) {
-    val input = target.slice(0, i * interval) + "~"
-    val st = new SuffixTree[Char]
-    var index = 0
-    for (c <- input) {
-      val t_measure = st.insert(c)
-      result(0).append(s"{$index, $t_measure},")
-//      result(1).append(s"{$index, ${t_measure._2}},")
-//      result(2).append(s"{$index, ${t_measure._3}},")
-      index += 1
-    }
-    println(s"testing input length: ${i * interval}")
-  }
-  result(0).append("}")
-//  result(1).append("}")
-//  result(2).append("}")
-*/
+  val gv = new GraphViz()
+  gv.add(gv.start_graph())
+  val st = new SuffixTree[Char]
+  st.batch_input("asdf")
+  gv.add(st.show())
+  gv.add(gv.end_graph())
+  println(gv.getDotSource)
+  gv.increaseDpi();   // 106 dpi
+  val gtype= "gif"
+  val rtype = "dot"
+  val img_path = demo_file_path + "out." + gtype
+  val out = new File(img_path)    // Windows
+  gv.writeGraphToFile( gv.getGraph(st.show(), gtype, rtype), out )
+  val f = new File(img_path)
+  val dt = Desktop.getDesktop
+  dt.open(f)
+  System.out.println("Done.")
+  */
+  concurrent_demo()
+//  val p = new Pattern("\\(...")
 
+//  val st = new SuffixTree[Char]
+//  st.batch_input("abacadd")
+//  st.delete_head()
+//  println(st.show(label_as_item = false))
+
+//  Experiments.execute_all_experiments()
+//  regex_search_test()
+//  Experiments.space_usage("howto", write_to = "space_usage.txt")
 
   def recursive_pattern_search_test(): Unit = {
     val str = "this is a pattern seen before, a pattern"
@@ -109,7 +64,7 @@ object MainEntry extends App {
     st.slide_size = 3
     val pattern = new Pattern("(a|t)(n|h)")
     for (i <- str) {
-      st.insert(i)
+      st.insert_wrapper(i)
       println("tree height is:" + st.get_height() + "; " + st.sequence.mkString + st.window_head + pattern.search_pattern(st).mkString(","))
     }
   }
@@ -127,7 +82,7 @@ object MainEntry extends App {
       while (test_buffer.length > window_size) test_buffer.remove(0)
       assert(s1.equals(test_buffer.mkString))
       st.batch_input(s slice(begin, i + 1))
-      sliding_tree.insert(s(i))
+      sliding_tree.insert_wrapper(s(i))
       println(s"sliding: ${sliding_tree.sequence.mkString}, st:${st.sequence.mkString}")
       assert(sliding_tree.sequence.equals(st.sequence))
       val result = st.equals(sliding_tree)
@@ -152,6 +107,13 @@ object MainEntry extends App {
       if (command.startsWith("#p:")) {
         val pattern = command slice(3, command.length)
         st_query_actor ! new Pattern(pattern)
+        val fw = new FileWriter(demo_file_path + "patterns.txt", true)
+        try {
+          fw.write(pattern + "\n")
+        }
+        finally {
+          fw.close()
+        }
       } else if (command == "#exit") {
         exit_flag = true
       } else {
@@ -222,7 +184,7 @@ object MainEntry extends App {
   def regex_search_test(): Unit = {
     val search_suffix_tree = new SuffixTree[Char]
     search_suffix_tree.log_level = Logger.ERROR
-    val target = io.Source.fromURL(getClass.getResource("/summaTheologica.txt")).mkString + "~"
+    val target = io.Source.fromURL(getClass.getResource("/small.txt")).mkString + "~"
     search_suffix_tree.batch_input(target)
 
     val test_cases = Array(
@@ -251,7 +213,7 @@ object MainEntry extends App {
       } else {
         println(s"test case $t failed")
         println(s"scala has size:${sr_set.size}, mine has size:${my_set.size}")
-        /* output test result to findout where is wrong
+        /* output test result to findout where is wrong*/
         val sf = new File("./scala_regex.txt")
         val sout = new PrintWriter(sf)
 //        sr_set.foreach(m => sout.println(search_suffix_tree.sequence.slice(m._1, m._1 + m._2).mkString))
@@ -262,7 +224,6 @@ object MainEntry extends App {
 //        my_set.foreach(m => myout.println(search_suffix_tree.sequence.slice(m._1, m._1 + m._2).mkString))
         my_set.toArray.sorted.foreach(m => myout.println(s"(${m._1},${m._2})"))
         myout.close()
-        */
       }
     }
   }
@@ -285,9 +246,9 @@ object MainEntry extends App {
     var counter = 0
     for (i <- s) {
       counter += 1
-      test.insert(i)
+      test.insert_wrapper(i)
     }
-    test.insert(terminal)
+    test.insert_wrapper(terminal)
     var leaf_c = 0
     for (n <- test.breadth_first_traverse()) {
       if (n.type_ == Node.LEAF_NODE) {
@@ -297,55 +258,5 @@ object MainEntry extends App {
     if (leaf_c == counter + 1) true else false
   }
 
-  def stream_automaton_test(): Unit = {
-    val x = new StreamAutomatonAdjacencyList()
-    val y = new StreamAutomatonAdjacencyMatrix()
-    for (i <- 0 to 300) {
-      val next_state = Random.nextInt(10)
-      print(next_state + "->")
-      x.input(State(next_state, System.currentTimeMillis()))
-      y.input(State(next_state, System.currentTimeMillis()))
-    }
-    x.show()
-    x.print_path()
-    println(x.find_state(3).mkString)
-    println(x.find_state(5).mkString)
-    println(y.find_state(3).mkString)
-    println(x.find_paths(3, 5))
-    println(x.find_paths(3, 3))
-    println(x.walk_path(7, 10).mkString(" -> "))
-    y.show()
-
-  }
-
-  def transition_test(): Unit = {
-    println("Starting!!!")
-    val z = new StreamObservation(100, 13)
-    val g = new TransitionGraph()
-    for (i <- 0 to 300) {
-      val next_state = Random.nextInt(10)
-      print(next_state + "->")
-      z.input(StreamObservation.OneObservation(next_state, i))
-      g.input(next_state)
-    }
-    println("end of input")
-    z.show_observation()
-    z.show_index()
-
-    g.show_graph()
-    g.show_edge_weight()
-    g.show_vertex_weight()
-    g.show_path_record()
-
-    println(z.observation_head)
-    println(z.index_head)
-    println(z.walk_path(205, 3).mkString(" "))
-    println(z.walk_path(293, 3).mkString(" "))
-    println(z.walk_path(290, 7).mkString(" "))
-    println(z.walk_path(290, 3).mkString(" "))
-    println(z.walk_path(259, 3).mkString(" "))
-    println(z.walk_path(289, 3).mkString(" "))
-
-  }
 
 }

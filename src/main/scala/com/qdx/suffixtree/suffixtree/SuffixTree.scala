@@ -15,8 +15,9 @@ class InternalNodeNumOfChildrenException extends Exception {}
 // http://stackoverflow.com/questions/9452701/ukkonens-suffix-tree-algorithm-in-plain-english
 class SuffixTree[T] extends Logger {
   log_level = Logger.ERROR
-  val sequence = new ArrayBuffer[T]
-  val leaves = new ArrayBuffer[Option[Node[T]]]
+  val sequence = new ArrayBuffer[T]()
+  val window_buffer = new ArrayBuffer[T]()
+  val leaves = new ArrayBuffer[Option[Node[T]]]()
   var window_head = 0: BigInt
   var window_size = 0: Int
   var slide_size = 1: Int
@@ -36,7 +37,34 @@ class SuffixTree[T] extends Logger {
 
   def batch_input(l: Iterable[T]): Unit = l.foreach((i: T) => insert(i))
 
-  def insert(i: T): Unit = {
+  def insert_wrapper(i: T): Boolean = {
+    if(window_size > 0) {
+      if (sequence.length < window_size) {
+        // feed input into the suffix tree
+        insert(i)
+        true
+      } else if (sequence.length == window_size && window_buffer.length < slide_size) {
+        // feed input into slide buffer
+        window_buffer.append(i)
+        if (window_buffer.length == slide_size) {
+          batch_input(window_buffer)
+          window_buffer.clear()
+          true
+        } else {
+          false
+        }
+      } else {
+        assert(false)
+        false
+      }
+    }else{
+      insert(i)
+      true
+    }
+  }
+
+  private def insert(i: T): Unit = {
+    
     sequence.append(i)
     leaves.append(None)
 
@@ -57,7 +85,7 @@ class SuffixTree[T] extends Logger {
           repeated = Some(new SuffixTree[T])
           //          repeated.get.log_level = Logger.DEBUG
         }
-        repeated.get.insert(i)
+        repeated.get.insert_wrapper(i)
       } else {
         // when match failed, insert the suffixes from remainder_index till the end
         inserting = true
@@ -154,7 +182,8 @@ class SuffixTree[T] extends Logger {
 
     // building up the dot language described tree
     val sb = new StringBuilder(
-      "\ndigraph suffixTree{\n node [shape=circle, label=\"\", fixedsize=true, width=0.1, height=0.1]\n")
+      "\ndigraph suffixTree{\n node [shape=circle, label=\"\", fixedsize=true, width=0.2, height=0.2]\n")
+    sb.append("edge [dir=both]\n")
 
     while (queue.length > 0) {
       val s = queue.length
@@ -170,7 +199,10 @@ class SuffixTree[T] extends Logger {
               1
             } else 0
           }
-          sb.append(id_map(n)).append(" -> ").append(id_map(e.to)).append(" [label=\"")
+          sb.append(id_map(n)).append(" -> ").append(id_map(e.to))
+          val ae = ap.get_edge()
+          if(ae.isDefined && ae.get.equals(e)) sb.append(" [color=blue, label=\"")
+          else sb.append(" [label=\"")
           // getting the label of edge
 
           val label_index = s"(${e.label.start}, ${e.label.end})"
@@ -205,6 +237,7 @@ class SuffixTree[T] extends Logger {
         case None =>
       }
     }
+    sb.append(id_map(ap.node) + " [color=blue, style=filled];\n")
     sb.append("}")
     //    debug(sb.toString())
     debug("Active Point(" + id_map(ap.node) + ", " + ap.edge_head + ", " + ap.length + ")")
@@ -242,9 +275,11 @@ class SuffixTree[T] extends Logger {
   def set_slide_size(size: Int): Unit = slide_size = size
 
   def slide(): Unit = {
-    while (window_size > 0 && sequence.length >= window_size + slide_size) {
-      0 until slide_size map(_ => delete_head())
-    }
+//    while (window_size > 0 && sequence.length >= window_size + slide_size) {
+//      println("slide")
+//      0 until slide_size map(_ => delete_head())
+//    }
+    if(window_size > 0 && sequence.length > window_size) delete_head()
   }
 
   def delete_head(): (Double, Double) = {

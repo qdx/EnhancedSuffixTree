@@ -17,7 +17,7 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
     val stree = new SuffixTree[Char]
     stree.log_level = Logger.ERROR
     stree.batch_input(s)
-    stree.insert('#')
+    stree.insert_wrapper('#')
     var leaf_counter = 0
     for (n <- stree.breadth_first_traverse())
       if (n.type_ == Node.LEAF_NODE)
@@ -29,7 +29,7 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
     val stree = new SuffixTree[Char]
     stree.log_level = Logger.ERROR
     stree.batch_input(s)
-    stree.insert('#')
+    stree.insert_wrapper('#')
     stree.leaves.zipWithIndex.forall(i => i._1.isEmpty || i._1.get.search_index_ == i._2 + stree.window_head)
   }
 
@@ -37,7 +37,7 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
     val stree = new SuffixTree[Char]
     stree.log_level = Logger.ERROR
     stree.batch_input(s)
-    stree.insert('#')
+    stree.insert_wrapper('#')
     var loop_flag = true
     var loop_index = 0
     val nodes = stree.breadth_first_traverse()
@@ -86,7 +86,7 @@ object SuffixTreeTest extends Properties("Suffix Tree Properties") {
         compare.batch_input(s slice(i - window_size, i))
         loop_flag = compare.equals(sliding_window)
       }
-      sliding_window.insert(s(i))
+      sliding_window.insert_wrapper(s(i))
       i += 1
     }
     loop_flag

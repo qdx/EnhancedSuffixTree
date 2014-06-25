@@ -8,38 +8,39 @@ import com.qdx.suffixtree.regex.Pattern
 object Experiments {
 
   def execute_all_experiments(): Unit = {
-
-    test_time_breakup_of_delete()
+//    println("start executing all experiments!")
+//
+//    test_time_breakup_of_delete()
+//
+//    println("running")
 //    different_pattern_match("summaTheologica.txt")
-    //    time_to_BFS()
-    //    val number = "[0|1|2|3|4|5|6|7|8|9]+"
-    //    denews_pattern_match(3000, number)
-    //    println(time_of_insert())
-    //    println("start executing all experiments!")
-    //    println("running recursion depth analysis on denews dataset")
-    //    denews_dataset()
-    //    println()
+//    time_to_BFS()
+//
+//    val number = "[0|1|2|3|4|5|6|7|8|9]+"
+//    denews_pattern_match(3000, number)
+//    println(time_of_insert())
+//    println("running recursion depth analysis on denews dataset")
+//    denews_dataset()
+//    println()
+//
+//    val false_pattern = "thiswillnevernappearimsure"
+//    println("\trunning number pattern ")
+//    pattern_match("howto", 1000000, 1000, number)
+//    println("\trunning false pattern ")
+//    pattern_match("howto", 1000000, 1000, false_pattern)
+//    println()
+//
+//    println("running delete head experiment")
+//    delete_head("howto", 1000000, 1000)
+//    println()
+//
+//    println("running sliding window experiment")
+//    sliding_window("howto", 100000, 1000, 10000)
+//    println()
 
-    //    println("running pattern match time experiments ")
-    //    val number = "[0|1|2|3|4|5|6|7|8|9]+"
-    //    val false_pattern = "thiswillnevernappearimsure"
-    //    println("\trunning number pattern ")
-    //    pattern_match("howto", 1000000, 1000, number)
-    //    println("\trunning false pattern ")
-    //    pattern_match("howto", 1000000, 1000, false_pattern)
-    //    println()
-    //
-    //    println("running delete head experiment")
-    //    delete_head("howto", 1000000, 1000)
-    //    println()
-
-    //    println("running sliding window experiment")
-    //    sliding_window("howto", 1000000, 1000, 10000)
-    //    println()
-
-    //    println("running time to build tree experiment")
-    //    time_to_build_tree("howto", 1000000, 1000)
-    //    println()
+    println("running time to build tree experiment")
+    time_to_build_tree("summaTheologica.txt", 1000000, 1000)
+    println()
 
   }
 
@@ -53,9 +54,9 @@ object Experiments {
     sb2.append("{")
     val ab1 = new ArrayBuffer[(Int, Double)]()
     val ab2 = new ArrayBuffer[(Int, Double)]()
-    0 until input.length foreach(i => {
+    0 until input.length foreach (i => {
       val time = st.delete_head()
-      if(i % 1000 == 0) {
+      if (i % 1000 == 0) {
         ab1.append((input.length - i, time._1))
         ab2.append((input.length - i, time._2))
       }
@@ -144,7 +145,7 @@ object Experiments {
     val st = new SuffixTree[Char]
     var max_depth = 0
     val avg_depth = input.map(i => {
-      st.insert(i)
+      st.insert_wrapper(i)
       val depth = st.get_height()
       if (depth > max_depth) max_depth = depth
       depth
@@ -239,11 +240,11 @@ object Experiments {
     interval until input_length - slide_length by interval foreach (i => {
       val st = new SuffixTree[Char]
       st.window_size = i
-      input slice(0, i) foreach (c => st.insert(c))
+      input slice(0, i) foreach (c => st.insert_wrapper(c))
       println(s"st length:${st.sequence.length}, window size: $i")
       assert(st.sequence.length == i)
       val current_input = input slice(i, i + slide_length)
-      val time = Timing.time(current_input.foreach(c => st.insert(c)))
+      val time = Timing.time(current_input.foreach(c => st.insert_wrapper(c)))
       sb.append(s"{$i, $time}, ")
     })
     sb.append("}")
@@ -258,16 +259,16 @@ object Experiments {
     0 until input_length by interval foreach (i => {
       val input = target.slice(0, i) + "~"
       val st = new SuffixTree[Char]
-      val t_measure = Timing.time(input.foreach(c => st.insert(c)))
+      val t_measure = Timing.time(input.foreach(c => st.insert_wrapper(c)))
       result.append(s"{$i, $t_measure},")
       println(s"testing input length: $i")
     })
     result.append("}")
-    WriteResult.write_to("time_to_build.txt", result.toString(), "time to build suffix tree:")
+    WriteResult.write_to("time_to_build_summ.txt", result.toString(), "time to build suffix tree:")
   }
 
   // measure data structure foot prints, in number of objects, references and primitives
-  def space_usage(input_file: String, length: Int = 1000000, interval: Int = 1000, write_to: String): Unit = {
+  def space_usage(input_file: String, length: Int = 10000, interval: Int = 100, write_to: String): Unit = {
     val st = new SuffixTree[Char]
     val sbs = new ArrayBuffer[StringBuilder]()
     Range(0, 4).foreach(_ => sbs.append(new StringBuilder))
@@ -276,7 +277,7 @@ object Experiments {
     val input = target.mkString slice(0, length)
     var count = 0
     for (c <- input) {
-      st.insert(c)
+      st.insert_wrapper(c)
       count += 1
       if (count % interval == 0) {
         val measure = ObjectGraphMeasurer.measure(st)
@@ -304,7 +305,7 @@ object Experiments {
     val times = new ArrayBuffer[Double]()
     0 until input.length foreach (i => {
       val c = input(i)
-      val t_measure = Timing.time(st.insert(c))
+      val t_measure = Timing.time(st.insert_wrapper(c))
       if (i % 1000 == 0) {
         result.append(s"{$i, $t_measure},")
         //        println(s"testing input length: $i")

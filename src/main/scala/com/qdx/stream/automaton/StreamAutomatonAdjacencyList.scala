@@ -1,8 +1,61 @@
 package com.qdx.stream.automaton
 
 import scala.collection.{mutable => m}
+import scala.util.Random
 
-object StreamAutomatonAdjacencyList{
+// some dirty manual tests
+object StreamAutomatonAdjacencyList {
+  def stream_automaton_test(): Unit = {
+    val x = new StreamAutomatonAdjacencyList()
+    val y = new StreamAutomatonAdjacencyMatrix()
+    for (i <- 0 to 300) {
+      val next_state = Random.nextInt(10)
+      print(next_state + "->")
+      x.input(State(next_state, System.currentTimeMillis()))
+      y.input(State(next_state, System.currentTimeMillis()))
+    }
+    x.show()
+    x.print_path()
+    println(x.find_state(3).mkString)
+    println(x.find_state(5).mkString)
+    println(y.find_state(3).mkString)
+    println(x.find_paths(3, 5))
+    println(x.find_paths(3, 3))
+    println(x.walk_path(7, 10).mkString(" -> "))
+    y.show()
+
+  }
+
+  def transition_test(): Unit = {
+    println("Starting!!!")
+    val z = new StreamObservation(100, 13)
+    val g = new TransitionGraph()
+    for (i <- 0 to 300) {
+      val next_state = Random.nextInt(10)
+      print(next_state + "->")
+      z.input(StreamObservation.OneObservation(next_state, i))
+      g.input(next_state)
+    }
+    println("end of input")
+    z.show_observation()
+    z.show_index()
+
+    g.show_graph()
+    g.show_edge_weight()
+    g.show_vertex_weight()
+    g.show_path_record()
+
+    println(z.observation_head)
+    println(z.index_head)
+    println(z.walk_path(205, 3).mkString(" "))
+    println(z.walk_path(293, 3).mkString(" "))
+    println(z.walk_path(290, 7).mkString(" "))
+    println(z.walk_path(290, 3).mkString(" "))
+    println(z.walk_path(259, 3).mkString(" "))
+    println(z.walk_path(289, 3).mkString(" "))
+
+  }
+
 }
 
 // To query state with time, build an index of states based on time
